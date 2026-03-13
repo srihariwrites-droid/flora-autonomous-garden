@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
@@ -55,6 +55,28 @@ def create_router(
                 "actions": actions,
                 "status": _status(reading.moisture if reading else None, plant.moisture_target_min, plant.moisture_target_max),
             },
+        )
+
+    @router.post("/plants/{name}/water", response_class=HTMLResponse)
+    async def manual_water(name: str, duration: int = Form(default=10)) -> HTMLResponse:
+        plant = config.plant_by_name(name)
+        if plant is None:
+            return HTMLResponse("<p>Plant not found</p>", status_code=404)
+        duration = max(1, min(duration, 30))  # clamp 1-30s
+        from flora.actuators.pump import water_plant as _pump
+        from flora.db import ActionRecord
+        success = await _pump(plant.pump_gpio, duration)
+        await db.log_action(ActionRecord(
+            plant_name=name,
+            timestamp=datetime.utcnow(),
+            action_type="manual_water",
+            parameters={"duration_seconds": duration},
+            reasoning="Manual trigger from dashboard",
+            claude_model="manual",
+        ))
+        status = "success" if success else "failed"
+        return HTMLResponse(
+            f'<div class="alert alert-info">Watered {name} for {duration}s: {status}</div>'
         )
 
     @router.get("/api/plants/{name}/history")

@@ -45,3 +45,9 @@ target/
 
 # Ralph backup directories (created by migration)
 .ralph_backup_*
+
+# Flora secrets and runtime data
+flora.toml
+flora.db
+photos/
+src/flora.egg-info/

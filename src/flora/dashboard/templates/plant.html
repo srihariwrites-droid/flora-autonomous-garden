@@ -22,6 +22,19 @@
 </div>
 </div>
 
+<div class="card mt-4">
+  <h2>Manual Water</h2>
+  <form hx-post="/plants/{{ plant.name }}/water"
+        hx-target="#water-result"
+        hx-swap="innerHTML">
+    <label>Duration (seconds):
+      <input type="number" name="duration" value="10" min="1" max="30" style="width:5rem;">
+    </label>
+    <button type="submit" class="btn btn-primary" style="margin-left:0.5rem;">Water now</button>
+  </form>
+  <div id="water-result" style="margin-top:0.5rem;"></div>
+</div>
+
 {% if journal %}
 <h2>Plant Journal</h2>
 <div class="card">
