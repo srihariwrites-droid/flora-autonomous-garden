@@ -1,0 +1,123 @@
+"""APScheduler setup: sensor polling every 30min, agent loop every 2hr."""
+from __future__ import annotations
+
+import logging
+from datetime import datetime
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler  # type: ignore[import]
+
+from flora.config import AppConfig
+from flora.db import AmbientReading, Database, SensorReading
+from flora.sensors.miflora import read_miflora
+from flora.sensors.sht31 import read_sht31
+from flora.sensors.bh1750 import read_bh1750
+from flora.agent.loop import AgentLoop
+from flora.notifications import send_daily_summary
+
+logger = logging.getLogger(__name__)
+
+
+async def _poll_sensors(config: AppConfig, db: Database) -> None:
+    """Poll all sensors and store readings."""
+    now = datetime.utcnow()
+    logger.info("Polling sensors at %s", now.isoformat())
+
+    # Poll each plant's Mi Flora sensor
+    for plant in config.plants:
+        reading = await read_miflora(plant.sensor_mac)
+        if reading is None:
+            logger.warning("No reading for %s (%s)", plant.name, plant.sensor_mac)
+            continue
+        await db.insert_sensor_reading(SensorReading(
+            plant_name=plant.name,
+            timestamp=now,
+            moisture=reading.moisture,
+            temperature=reading.temperature,
+            light=reading.light,
+            fertility=reading.fertility,
+            battery=reading.battery,
+        ))
+        logger.debug("Stored reading for %s: moisture=%.1f%%", plant.name, reading.moisture)
+
+    # Poll ambient sensors
+    sht31 = await read_sht31()
+    bh1750 = await read_bh1750()
+    if sht31 or bh1750:
+        await db.insert_ambient_reading(AmbientReading(
+            timestamp=now,
+            temperature=sht31.temperature if sht31 else None,
+            humidity=sht31.humidity if sht31 else None,
+            light_lux=bh1750.light_lux if bh1750 else None,
+        ))
+
+
+async def _run_agent(config: AppConfig, db: Database) -> None:
+    """Run one agent reasoning cycle."""
+    logger.info("Starting agent reasoning loop")
+    agent = AgentLoop(config, db)
+    await agent.run_once()
+
+
+async def _send_daily_summary(config: AppConfig, db: Database) -> None:
+    """Collect latest readings and send daily Telegram summary."""
+    summaries: list[dict[str, object]] = []
+    for plant in config.plants:
+        reading = await db.get_latest_sensor_reading(plant.name)
+        if reading:
+            # Simple health status based on moisture
+            if reading.moisture is None:
+                status = "unknown"
+            elif reading.moisture < 20:
+                status = "critical"
+            elif reading.moisture < plant.moisture_target_min:
+                status = "dry"
+            elif reading.moisture > plant.moisture_target_max:
+                status = "wet"
+            else:
+                status = "healthy"
+            summaries.append({
+                "name": plant.name,
+                "moisture": reading.moisture,
+                "temperature": reading.temperature,
+                "status": status,
+            })
+    await send_daily_summary(config.telegram_token, config.telegram_chat_id, summaries)
+
+
+def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
+    """Create and configure the APScheduler instance."""
+    scheduler = AsyncIOScheduler()
+
+    # Sensor poll: every 30 minutes (configurable)
+    scheduler.add_job(
+        _poll_sensors,
+        trigger="interval",
+        seconds=config.sensor_poll_interval,
+        args=[config, db],
+        id="sensor_poll",
+        name="Sensor poll",
+        next_run_time=datetime.now(),  # run immediately on start
+    )
+
+    # Agent loop: every 2 hours (configurable)
+    scheduler.add_job(
+        _run_agent,
+        trigger="interval",
+        seconds=config.agent_loop_interval,
+        args=[config, db],
+        id="agent_loop",
+        name="Agent reasoning loop",
+    )
+
+    # Daily summary: 7am every day
+    scheduler.add_job(
+        _send_daily_summary,
+        trigger="cron",
+        hour=7,
+        minute=0,
+        args=[config, db],
+        id="daily_summary",
+        name="Daily summary",
+    )
+
+    return scheduler

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Plant Overview</h1>
+
+{% if ambient %}
+<div class="card" style="margin-bottom: 1rem;">
+    <h2>Ambient Conditions</h2>
+    <div style="display: flex; gap: 2rem;">
+        <div><span class="stat-label">Temperature</span> <strong>{{ "%.1f"|format(ambient.temperature) }}°C</strong></div>
+        <div><span class="stat-label">Humidity</span> <strong>{{ "%.0f"|format(ambient.humidity) }}%</strong></div>
+        {% if ambient.light_lux %}<div><span class="stat-label">Light</span> <strong>{{ "%.0f"|format(ambient.light_lux) }} lux</strong></div>{% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="grid">
+{% for p in plants %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+        <a href="/plants/{{ p.config.name }}" class="plant-link">{{ p.config.name }}</a>
+        <span class="badge badge-{{ p.status }}">{{ p.status }}</span>
+    </div>
+    <div style="font-size: 0.8rem; color: #888; margin-bottom: 0.75rem;">{{ p.config.species }}</div>
+    {% if p.reading %}
+    <div class="stat"><span class="stat-label">Moisture</span><span class="stat-value">{{ "%.0f"|format(p.reading.moisture) if p.reading.moisture else "N/A" }}%</span></div>
+    <div class="stat"><span class="stat-label">Temperature</span><span class="stat-value">{{ "%.1f"|format(p.reading.temperature) if p.reading.temperature else "N/A" }}°C</span></div>
+    <div class="stat"><span class="stat-label">Light</span><span class="stat-value">{{ p.reading.light if p.reading.light else "N/A" }} lux</span></div>
+    <div class="stat"><span class="stat-label">Battery</span><span class="stat-value">{{ p.reading.battery if p.reading.battery else "N/A" }}%</span></div>
+    {% else %}
+    <div style="color: #888; font-size: 0.85rem;">No readings yet</div>
+    {% endif %}
+</div>
+{% endfor %}
+</div>
+
+{% if actions %}
+<h2 style="margin-top: 1.5rem;">Recent Actions</h2>
+<div class="card">
+<table>
+<thead><tr><th>Time</th><th>Plant</th><th>Action</th><th>Reasoning</th></tr></thead>
+<tbody>
+{% for a in actions %}
+<tr>
+    <td>{{ a.timestamp.strftime("%m-%d %H:%M") }}</td>
+    <td>{{ a.plant_name or "—" }}</td>
+    <td>{{ a.action_type }}</td>
+    <td style="color: #555; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.reasoning }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

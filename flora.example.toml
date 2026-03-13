@@ -1,0 +1,50 @@
+# Flora configuration example
+# Copy to flora.toml and fill in your values
+
+[app]
+db_path = "flora.db"
+dashboard_port = 8000
+sensor_poll_interval = 1800   # seconds (30 min)
+agent_loop_interval = 7200    # seconds (2 hr)
+
+[anthropic]
+api_key = "sk-ant-REPLACE_ME"
+model = "claude-sonnet-4-6"
+
+[telegram]
+token = "0000000000:REPLACE_WITH_BOT_TOKEN"
+chat_id = "000000000"
+
+[[plants]]
+name = "basil-1"
+species = "basil"
+sensor_mac = "C4:7C:8D:XX:XX:XX"
+pump_gpio = 17
+moisture_target_min = 40
+moisture_target_max = 70
+
+[[plants]]
+name = "parsley-1"
+species = "parsley"
+sensor_mac = "C4:7C:8D:YY:YY:YY"
+pump_gpio = 27
+moisture_target_min = 35
+moisture_target_max = 60
+
+[[plants]]
+name = "mint-1"
+species = "mint"
+sensor_mac = "C4:7C:8D:ZZ:ZZ:ZZ"
+pump_gpio = 22
+moisture_target_min = 50
+moisture_target_max = 75
+
+[[smart_plugs]]
+alias = "grow-light"
+host = "192.168.1.100"
+role = "grow_light"
+
+[[smart_plugs]]
+alias = "humidifier"
+host = "192.168.1.101"
+role = "humidifier"

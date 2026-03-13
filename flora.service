@@ -1,0 +1,18 @@
+[Unit]
+Description=Flora Autonomous Herb Garden Agent
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/flora-app
+ExecStart=/usr/local/bin/flora /home/pi/flora-app/flora.toml
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=flora
+
+[Install]
+WantedBy=multi-user.target

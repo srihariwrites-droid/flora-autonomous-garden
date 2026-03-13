@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Plant Journals</h1>
+<div class="card">
+<table>
+<thead><tr><th>Time</th><th>Plant</th><th>Type</th><th>Entry</th></tr></thead>
+<tbody>
+{% for e in journals %}
+<tr>
+    <td>{{ e.timestamp.strftime("%Y-%m-%d %H:%M") }}</td>
+    <td><a href="/plants/{{ e.plant_name }}" class="plant-link">{{ e.plant_name }}</a></td>
+    <td>{{ e.entry_type }}</td>
+    <td>{{ e.content }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

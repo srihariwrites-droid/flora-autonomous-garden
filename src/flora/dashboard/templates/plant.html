@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ plant.name }} <span class="badge badge-{{ status }}">{{ status }}</span></h1>
+<div style="color: #888; margin-bottom: 1rem;">Species: {{ plant.species }} | Moisture target: {{ plant.moisture_target_min }}-{{ plant.moisture_target_max }}%</div>
+
+<div class="grid">
+{% if reading %}
+<div class="card">
+    <h2>Current Readings</h2>
+    <div class="stat"><span class="stat-label">Moisture</span><span class="stat-value">{{ "%.0f"|format(reading.moisture) if reading.moisture else "N/A" }}%</span></div>
+    <div class="stat"><span class="stat-label">Temperature</span><span class="stat-value">{{ "%.1f"|format(reading.temperature) if reading.temperature else "N/A" }}°C</span></div>
+    <div class="stat"><span class="stat-label">Light</span><span class="stat-value">{{ reading.light if reading.light else "N/A" }} lux</span></div>
+    <div class="stat"><span class="stat-label">Fertility</span><span class="stat-value">{{ reading.fertility if reading.fertility else "N/A" }} µS/cm</span></div>
+    <div class="stat"><span class="stat-label">Battery</span><span class="stat-value">{{ reading.battery if reading.battery else "N/A" }}%</span></div>
+    <div class="stat"><span class="stat-label">Last updated</span><span class="stat-value">{{ reading.timestamp.strftime("%Y-%m-%d %H:%M") }}</span></div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Moisture History</h2>
+    <canvas id="moistureChart" height="200"></canvas>
+</div>
+</div>
+
+{% if journal %}
+<h2>Plant Journal</h2>
+<div class="card">
+<table>
+<thead><tr><th>Time</th><th>Type</th><th>Entry</th></tr></thead>
+<tbody>
+{% for e in journal %}
+<tr>
+    <td>{{ e.timestamp.strftime("%m-%d %H:%M") }}</td>
+    <td><span class="badge badge-{{ 'healthy' if e.entry_type == 'observation' else 'dry' }}">{{ e.entry_type }}</span></td>
+    <td>{{ e.content }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+
+{% if actions %}
+<h2>Recent Actions</h2>
+<div class="card">
+<table>
+<thead><tr><th>Time</th><th>Action</th><th>Reasoning</th></tr></thead>
+<tbody>
+{% for a in actions %}
+<tr>
+    <td>{{ a.timestamp.strftime("%m-%d %H:%M") }}</td>
+    <td>{{ a.action_type }}</td>
+    <td>{{ a.reasoning }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+
+<script>
+const plantName = "{{ plant.name }}";
+async function loadChart() {
+    const resp = await fetch(`/api/plants/${plantName}/history?hours=48`);
+    const data = await resp.json();
+    const labels = data.readings.map(r => r.ts.substring(5));
+    const moisture = data.readings.map(r => r.moisture);
+    const ctx = document.getElementById("moistureChart");
+    new Chart(ctx, {
+        type: "line",
+        data: {
+            labels,
+            datasets: [{
+                label: "Moisture %",
+                data: moisture,
+                borderColor: "#2d5a27",
+                backgroundColor: "rgba(45,90,39,0.1)",
+                tension: 0.3,
+                fill: true,
+                pointRadius: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { min: 0, max: 100, title: { display: true, text: "%" } },
+                x: { ticks: { maxTicksLimit: 10 } }
+            }
+        }
+    });
+}
+loadChart();
+</script>
+{% endblock %}

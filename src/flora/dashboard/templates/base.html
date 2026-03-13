@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flora Dashboard</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f4f0;
+            color: #1a2e1a;
+            line-height: 1.5;
+        }
+        nav {
+            background: #2d5a27;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        nav a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.9rem; }
+        nav a:hover { color: white; }
+        nav .brand { font-weight: 700; font-size: 1.1rem; color: white; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+        h1 { font-size: 1.5rem; margin-bottom: 1rem; color: #2d5a27; }
+        h2 { font-size: 1.1rem; margin-bottom: 0.75rem; color: #2d5a27; }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-healthy { background: #d4edda; color: #155724; }
+        .badge-dry     { background: #fff3cd; color: #856404; }
+        .badge-wet     { background: #cce5ff; color: #004085; }
+        .badge-critical{ background: #f8d7da; color: #721c24; }
+        .badge-unknown { background: #e2e3e5; color: #383d41; }
+        .stat { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #f0f0f0; }
+        .stat:last-child { border-bottom: none; }
+        .stat-label { color: #666; font-size: 0.85rem; }
+        .stat-value { font-weight: 600; font-size: 0.85rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { text-align: left; padding: 0.5rem; background: #f8f9fa; color: #2d5a27; }
+        td { padding: 0.5rem; border-bottom: 1px solid #f0f0f0; }
+        a.plant-link { color: #2d5a27; font-weight: 600; text-decoration: none; }
+        a.plant-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <nav>
+        <span class="brand">🌿 Flora</span>
+        <a href="/">Plants</a>
+        <a href="/actions">Actions</a>
+        <a href="/logs">Logs</a>
+    </nav>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
