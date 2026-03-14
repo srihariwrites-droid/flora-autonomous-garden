@@ -3,10 +3,13 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, time as dtime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from flora.config import AppConfig
-from flora.db import ActionRecord, Database, JournalEntry
+from flora.db import ActionRecord, Database, JournalEntry, PlugSchedule
+
+if TYPE_CHECKING:
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler  # type: ignore[import]
 from flora.actuators.pump import water_plant as _water_plant
 from flora.actuators.smartplug import toggle_plug, set_schedule
 from flora.notifications import send_telegram
@@ -30,7 +33,12 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     },
     {
         "name": "set_light_schedule",
-        "description": "Update the grow light on/off schedule via smart plug.",
+        "description": (
+            "Set the daily grow-light on/off schedule. "
+            "Registers two APScheduler cron jobs (grow_light_on, grow_light_off) that toggle "
+            "the Kasa smart plug at the specified times each day, and persists the schedule to "
+            "SQLite so it survives restarts. Call this to extend or shorten the photoperiod."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
@@ -101,9 +109,15 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
 class ToolExecutor:
     """Executes Claude tool calls for the Flora agent."""
 
-    def __init__(self, config: AppConfig, db: Database) -> None:
+    def __init__(
+        self,
+        config: AppConfig,
+        db: Database,
+        scheduler: "AsyncIOScheduler | None" = None,
+    ) -> None:
         self._config = config
         self._db = db
+        self._scheduler = scheduler
 
     async def execute(self, tool_name: str, tool_input: dict[str, Any]) -> str:
         """Dispatch a tool call and return the string result."""
@@ -159,17 +173,50 @@ class ToolExecutor:
 
         on_time = dtime(on_hour, on_minute)
         off_time = dtime(off_hour, off_minute)
-        success = await set_schedule(plug.host, plug.alias, on_time, off_time)
+        on_str = f"{on_hour:02d}:{on_minute:02d}"
+        off_str = f"{off_hour:02d}:{off_minute:02d}"
+
+        # Persist schedule to SQLite so it survives restarts
+        await self._db.upsert_plug_schedule(PlugSchedule(
+            alias=plug.alias,
+            on_time=on_str,
+            off_time=off_str,
+            enabled=True,
+        ))
+
+        # Register (or replace) APScheduler cron jobs for the light toggle
+        if self._scheduler is not None:
+            self._scheduler.add_job(
+                toggle_plug,
+                trigger="cron",
+                hour=on_hour,
+                minute=on_minute,
+                args=[plug.host, plug.alias, True],
+                id="grow_light_on",
+                name="Grow light ON",
+                replace_existing=True,
+            )
+            self._scheduler.add_job(
+                toggle_plug,
+                trigger="cron",
+                hour=off_hour,
+                minute=off_minute,
+                args=[plug.host, plug.alias, False],
+                id="grow_light_off",
+                name="Grow light OFF",
+                replace_existing=True,
+            )
+            logger.info("Registered cron jobs: grow_light ON=%s OFF=%s", on_str, off_str)
 
         await self._db.log_action(ActionRecord(
             plant_name=None,
             timestamp=datetime.utcnow(),
             action_type="set_light_schedule",
-            parameters={"on": f"{on_hour:02d}:{on_minute:02d}", "off": f"{off_hour:02d}:{off_minute:02d}"},
+            parameters={"on": on_str, "off": off_str},
             reasoning=reason,
             claude_model=self._config.anthropic_model,
         ))
-        return f"Light schedule set ON={on_time} OFF={off_time}: {'ok' if success else 'failed'}"
+        return f"Light schedule set ON={on_str} OFF={off_str}: ok"
 
     async def _toggle_device(self, inp: dict[str, Any]) -> str:
         role: str = inp["device_role"]
