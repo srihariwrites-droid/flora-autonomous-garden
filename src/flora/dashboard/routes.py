@@ -31,10 +31,20 @@ def create_router(
             })
         ambient = await db.get_latest_ambient()
         actions = await db.get_recent_actions(limit=5)
+        plants_art_json = json.dumps([
+            {
+                "name": p["config"].name,
+                "species": p["config"].species,
+                "moisture": p["reading"].moisture if p["reading"] else None,
+                "status": p["status"],
+            }
+            for p in plant_data
+        ])
         return templates.TemplateResponse(
             request,
             "index.html",
-            {"plants": plant_data, "ambient": ambient, "actions": actions},
+            {"plants": plant_data, "ambient": ambient, "actions": actions,
+             "plants_art_json": plants_art_json},
         )
 
     @router.get("/plants/{name}", response_class=HTMLResponse)
