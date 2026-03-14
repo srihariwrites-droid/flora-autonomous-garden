@@ -4,7 +4,12 @@ from __future__ import annotations
 import pytest
 from datetime import time as dtime
 from pathlib import Path
-from unittest.mock import MagicMock, AsyncMock, call
+from unittest.mock import MagicMock, AsyncMock
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from flora.config import AppConfig
 
 from flora.db import Database, PlugSchedule
 
@@ -56,7 +61,7 @@ async def test_get_plug_schedule_returns_none_when_absent(tmp_path: Path) -> Non
 
 # ─── ToolExecutor._set_light_schedule ─────────────────────────────────────────
 
-def _make_config(tmp_path: Path):
+def _make_config(tmp_path: Path) -> "AppConfig":
     """Create a minimal AppConfig with a grow_light plug."""
     import textwrap
     toml_text = textwrap.dedent("""\

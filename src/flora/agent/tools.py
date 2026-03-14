@@ -5,13 +5,13 @@ import logging
 from datetime import datetime, time as dtime
 from typing import TYPE_CHECKING, Any
 
-from flora.config import AppConfig
-from flora.db import ActionRecord, Database, JournalEntry, PlugSchedule
-
 if TYPE_CHECKING:
     from apscheduler.schedulers.asyncio import AsyncIOScheduler  # type: ignore[import]
+
 from flora.actuators.pump import water_plant as _water_plant
-from flora.actuators.smartplug import toggle_plug, set_schedule
+from flora.actuators.smartplug import toggle_plug
+from flora.config import AppConfig
+from flora.db import ActionRecord, Database, JournalEntry, PlugSchedule
 from flora.notifications import send_telegram
 
 logger = logging.getLogger(__name__)
@@ -171,10 +171,11 @@ class ToolExecutor:
         if plug is None:
             return "No grow_light smart plug configured."
 
+        # dtime() raises ValueError for out-of-range hours/minutes — validates inputs
         on_time = dtime(on_hour, on_minute)
         off_time = dtime(off_hour, off_minute)
-        on_str = f"{on_hour:02d}:{on_minute:02d}"
-        off_str = f"{off_hour:02d}:{off_minute:02d}"
+        on_str = f"{on_time.hour:02d}:{on_time.minute:02d}"
+        off_str = f"{off_time.hour:02d}:{off_time.minute:02d}"
 
         # Persist schedule to SQLite so it survives restarts
         await self._db.upsert_plug_schedule(PlugSchedule(
@@ -189,8 +190,8 @@ class ToolExecutor:
             self._scheduler.add_job(
                 toggle_plug,
                 trigger="cron",
-                hour=on_hour,
-                minute=on_minute,
+                hour=on_time.hour,
+                minute=on_time.minute,
                 args=[plug.host, plug.alias, True],
                 id="grow_light_on",
                 name="Grow light ON",
@@ -199,8 +200,8 @@ class ToolExecutor:
             self._scheduler.add_job(
                 toggle_plug,
                 trigger="cron",
-                hour=off_hour,
-                minute=off_minute,
+                hour=off_time.hour,
+                minute=off_time.minute,
                 args=[plug.host, plug.alias, False],
                 id="grow_light_off",
                 name="Grow light OFF",
