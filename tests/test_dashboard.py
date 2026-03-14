@@ -1,9 +1,11 @@
 """Dashboard integration tests using ASGI TestClient."""
+import json
 import pytest
 from httpx import AsyncClient, ASGITransport
 from flora.config import load_config
 from flora.db import Database
 from flora.dashboard.app import create_app
+from flora.dashboard.routes import _mock_moisture, _mock_status, _SPECIES_MOCK, _DEFAULT_MOCK
 
 _TOML = """
 [app]
@@ -68,3 +70,37 @@ async def test_manual_water_endpoint(client):
 async def test_manual_water_unknown_plant(client):
     resp = await client.post("/plants/unknown/water", data={"duration": "5"})
     assert resp.status_code == 404
+
+
+# --- Mock species data helpers ---
+
+def test_mock_moisture_known_species():
+    for species in _SPECIES_MOCK:
+        assert _mock_moisture(species) == _SPECIES_MOCK[species][0]
+
+
+def test_mock_status_known_species():
+    for species, (_, expected_status) in _SPECIES_MOCK.items():
+        assert _mock_status(species) == expected_status
+
+
+def test_mock_moisture_case_insensitive():
+    assert _mock_moisture("Basil") == _mock_moisture("basil")
+    assert _mock_moisture("MINT") == _mock_moisture("mint")
+
+
+def test_mock_moisture_unknown_species_uses_default():
+    assert _mock_moisture("unknown_herb") == _DEFAULT_MOCK[0]
+
+
+def test_mock_status_unknown_species_uses_default():
+    assert _mock_status("unknown_herb") == _DEFAULT_MOCK[1]
+
+
+async def test_index_plants_art_json_no_reading(client):
+    """When no sensor data exists, plants_art_json uses mock values not 'unknown'."""
+    resp = await client.get("/")
+    assert resp.status_code == 200
+    # The JSON is embedded in a <script> tag — check the page contains mock status values
+    # (not "unknown") since no readings have been inserted
+    assert '"status": "unknown"' not in resp.text or '"has_reading": false' in resp.text

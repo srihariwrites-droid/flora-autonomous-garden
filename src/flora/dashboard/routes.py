@@ -35,8 +35,12 @@ def create_router(
             {
                 "name": p["config"].name,
                 "species": p["config"].species,
+                # Use real data when available; fall back to species-typical mock values so
+                # the canvas shows a plausible plant before any sensor has reported.
+                # Both moisture and status use the same branch so canvas and card stay consistent.
                 "moisture": p["reading"].moisture if p["reading"] else _mock_moisture(p["config"].species),
                 "status": p["status"] if p["reading"] else _mock_status(p["config"].species),
+                "has_reading": p["reading"] is not None,
             }
             for p in plant_data
         ])

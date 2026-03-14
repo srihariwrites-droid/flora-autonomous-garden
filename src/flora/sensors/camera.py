@@ -50,22 +50,19 @@ async def _capture_real(plant_name: str, path: Path, ts: datetime) -> PhotoResul
 
 
 def _capture_mock(plant_name: str, path: Path, ts: datetime) -> PhotoResult:
-    """Generate a procedural plant illustration and save as JPEG."""
-    img = _render_plant(plant_name, seed=hash(plant_name) & 0xFFFF)
-    # Save as JPEG even though filename ends .jpg — path already has .jpg ext
-    img.save(str(path), format="JPEG", quality=88)
-    logger.info("[MOCK] Generated plant photo: %s", path)
+    try:
+        img = _render_plant(plant_name, seed=hash(plant_name) & 0xFFFF)
+        img.save(str(path), format="JPEG", quality=88)
+        logger.info("[MOCK] Generated plant photo: %s", path)
+    except ImportError:
+        # Pillow unavailable — write a raw placeholder so the file exists
+        path.write_bytes(b"MOCK_IMAGE")
+        logger.warning("[MOCK] Pillow not installed — wrote placeholder: %s", path)
     return PhotoResult(plant_name=plant_name, timestamp=ts, path=path)
 
 
-def _render_plant(plant_name: str, seed: int = 42):  # type: ignore[return]
-    """Draw a procedural botanical illustration using Pillow + ImageDraw."""
-    try:
-        from PIL import Image, ImageDraw, ImageFilter
-    except ImportError:
-        logger.warning("Pillow not installed — falling back to empty image")
-        from PIL import Image  # type: ignore[assignment]
-        return Image.new("RGB", (640, 480), color=(12, 24, 16))
+def _render_plant(plant_name: str, seed: int = 42) -> "Image.Image":
+    from PIL import Image, ImageDraw, ImageFilter
 
     rng = random.Random(seed)
     W, H = 640, 480
