@@ -48,6 +48,13 @@ CREATE TABLE IF NOT EXISTS action_log (
     claude_model TEXT    NOT NULL DEFAULT ''
 );
 
+CREATE TABLE IF NOT EXISTS plug_schedules (
+    alias    TEXT    PRIMARY KEY,
+    on_time  TEXT    NOT NULL,
+    off_time TEXT    NOT NULL,
+    enabled  INTEGER NOT NULL DEFAULT 1
+);
+
 CREATE INDEX IF NOT EXISTS idx_sensor_plant_ts   ON sensor_readings(plant_name, timestamp);
 CREATE INDEX IF NOT EXISTS idx_ambient_ts        ON ambient_readings(timestamp);
 CREATE INDEX IF NOT EXISTS idx_journal_plant_ts  ON plant_journals(plant_name, timestamp);
@@ -80,6 +87,14 @@ class JournalEntry:
     timestamp: datetime
     entry_type: str
     content: str
+
+
+@dataclass
+class PlugSchedule:
+    alias: str
+    on_time: str    # HH:MM
+    off_time: str   # HH:MM
+    enabled: bool
 
 
 @dataclass
@@ -288,3 +303,34 @@ class Database:
         ) as cursor:
             row = await cursor.fetchone()
         return int(row[0]) if row else 0
+
+    # --- Plug schedules ---
+
+    async def upsert_plug_schedule(self, schedule: PlugSchedule) -> None:
+        conn = self._conn_or_raise()
+        await conn.execute(
+            """INSERT INTO plug_schedules (alias, on_time, off_time, enabled)
+               VALUES (?, ?, ?, ?)
+               ON CONFLICT(alias) DO UPDATE SET
+                   on_time  = excluded.on_time,
+                   off_time = excluded.off_time,
+                   enabled  = excluded.enabled""",
+            (schedule.alias, schedule.on_time, schedule.off_time, int(schedule.enabled)),
+        )
+        await conn.commit()
+
+    async def get_plug_schedule(self, alias: str) -> PlugSchedule | None:
+        conn = self._conn_or_raise()
+        async with conn.execute(
+            "SELECT alias, on_time, off_time, enabled FROM plug_schedules WHERE alias = ?",
+            (alias,),
+        ) as cursor:
+            row = await cursor.fetchone()
+        if row is None:
+            return None
+        return PlugSchedule(
+            alias=row["alias"],
+            on_time=row["on_time"],
+            off_time=row["off_time"],
+            enabled=bool(row["enabled"]),
+        )
