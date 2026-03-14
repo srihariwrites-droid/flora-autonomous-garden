@@ -215,6 +215,25 @@ class Database:
             light_lux=row["light_lux"],
         )
 
+    async def get_ambient_readings(self, hours: int) -> list[AmbientReading]:
+        conn = self._conn_or_raise()
+        async with conn.execute(
+            """SELECT * FROM ambient_readings
+               WHERE timestamp >= datetime('now', ? || ' hours')
+               ORDER BY timestamp DESC""",
+            (f"-{hours}",),
+        ) as cursor:
+            rows = await cursor.fetchall()
+        return [
+            AmbientReading(
+                timestamp=datetime.fromisoformat(row["timestamp"]),
+                temperature=row["temperature"],
+                humidity=row["humidity"],
+                light_lux=row["light_lux"],
+            )
+            for row in rows
+        ]
+
     # --- Plant journals ---
 
     async def add_journal_entry(self, entry: JournalEntry) -> None:
