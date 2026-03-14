@@ -97,6 +97,7 @@ def test_mock_status_unknown_species_uses_default():
     assert _mock_status("unknown_herb") == _DEFAULT_MOCK[1]
 
 
+@pytest.mark.asyncio
 async def test_index_plants_art_json_no_reading(client):
     """When no sensor data exists, plants_art_json uses mock values not 'unknown'."""
     resp = await client.get("/")
