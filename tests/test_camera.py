@@ -4,6 +4,7 @@ import pytest
 from flora.sensors.camera import capture_photo, PhotoResult
 
 
+@pytest.mark.asyncio
 async def test_capture_returns_result_on_non_pi():
     """On non-Pi hardware, capture_photo returns a mock PhotoResult."""
     result = await capture_photo("basil-1", save_dir=Path("/tmp/flora-test-photos"))
@@ -13,6 +14,7 @@ async def test_capture_returns_result_on_non_pi():
     assert result.path.exists()
 
 
+@pytest.mark.asyncio
 async def test_capture_creates_directory(tmp_path):
     save_dir = tmp_path / "photos"
     assert not save_dir.exists()

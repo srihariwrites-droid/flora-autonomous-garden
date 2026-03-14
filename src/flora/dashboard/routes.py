@@ -35,8 +35,8 @@ def create_router(
             {
                 "name": p["config"].name,
                 "species": p["config"].species,
-                "moisture": p["reading"].moisture if p["reading"] else None,
-                "status": p["status"],
+                "moisture": p["reading"].moisture if p["reading"] else _mock_moisture(p["config"].species),
+                "status": p["status"] if p["reading"] else _mock_status(p["config"].species),
             }
             for p in plant_data
         ])
@@ -133,6 +133,25 @@ def create_router(
         )
 
     return router
+
+
+# Species-specific mock values for visualization when no sensor has reported yet.
+_SPECIES_MOCK: dict[str, tuple[float, str]] = {
+    "basil":     (63.0, "healthy"),
+    "mint":      (72.0, "wet"),
+    "parsley":   (54.0, "healthy"),
+    "chives":    (41.0, "dry"),
+    "coriander": (31.0, "dry"),
+}
+_DEFAULT_MOCK: tuple[float, str] = (55.0, "healthy")
+
+
+def _mock_moisture(species: str) -> float:
+    return _SPECIES_MOCK.get(species.lower(), _DEFAULT_MOCK)[0]
+
+
+def _mock_status(species: str) -> str:
+    return _SPECIES_MOCK.get(species.lower(), _DEFAULT_MOCK)[1]
 
 
 def _status(moisture: float | None, target_min: int, target_max: int) -> str:
