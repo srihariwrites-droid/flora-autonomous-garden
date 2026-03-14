@@ -1,11 +1,13 @@
 """Dashboard routes for Flora."""
 from __future__ import annotations
 
+import csv
+import io
 import json
 from datetime import datetime
 
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
 from flora.config import AppConfig
@@ -107,6 +109,32 @@ def create_router(
             for r in reversed(readings)
         ]
         return JSONResponse({"plant": name, "hours": hours, "readings": data})
+
+    @router.get("/api/plants/{name}/export.csv", response_model=None)
+    async def export_plant_csv(name: str) -> StreamingResponse | HTMLResponse:
+        """CSV download of the last 7 days of sensor readings."""
+        plant = config.plant_by_name(name)
+        if plant is None:
+            return HTMLResponse("<h1>Plant not found</h1>", status_code=404)
+        readings = await db.get_sensor_history(name, hours=168, limit=10000)
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(["timestamp", "moisture", "temperature", "light", "fertility", "battery"])
+        for r in reversed(readings):
+            writer.writerow([
+                r.timestamp.isoformat(),
+                r.moisture,
+                r.temperature,
+                r.light,
+                r.fertility,
+                r.battery,
+            ])
+        buf.seek(0)
+        return StreamingResponse(
+            iter([buf.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{name}-history.csv"'},
+        )
 
     @router.get("/actions", response_class=HTMLResponse)
     async def actions_page(request: Request) -> HTMLResponse:
