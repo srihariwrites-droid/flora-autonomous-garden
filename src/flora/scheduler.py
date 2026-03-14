@@ -130,6 +130,7 @@ def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
         args=[config, db],
         id="daily_summary",
         name="Daily summary",
+        replace_existing=True,
     )
 
     # Daily photo capture: 7am every day

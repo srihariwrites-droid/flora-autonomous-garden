@@ -5,7 +5,6 @@ import logging
 import platform
 import random
 from dataclasses import dataclass
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +35,7 @@ async def _read_real(mac: str) -> MiFloraReading | None:
 
         poller = MiFloraPoller(mac, BleakBackend)
         # MiFloraPoller is synchronous — offload to thread to avoid blocking event loop
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _poll_sync, poller)
     except Exception as exc:
         logger.warning("Mi Flora read failed for %s: %s", mac, exc)
@@ -59,7 +58,7 @@ def _poll_sync(poller: object) -> MiFloraReading:
 def _read_mock(mac: str) -> MiFloraReading:
     """Return plausible mock sensor data seeded by MAC for repeatability."""
     seed = hash(mac) % 10000
-    rng = random.Random(seed + int(datetime.utcnow().hour))
+    rng = random.Random(seed)
     return MiFloraReading(
         moisture=rng.uniform(35, 65),
         temperature=rng.uniform(18, 26),

@@ -54,8 +54,11 @@
                 const baseY = CANVAS_H - 30;
                 // Slow perlin sway per plant
                 const sway = (p.noise(p.frameCount * 0.007 + i * 47.3) - 0.5) * 0.3;
+                // Dim plants that have no real sensor reading yet
+                if (!plant.has_reading) p.drawingContext.globalAlpha = 0.45;
                 drawPlant(plant, cx, baseY, i, sway);
                 drawLabel(plant, cx);
+                p.drawingContext.globalAlpha = 1.0;
             }
         };
 
