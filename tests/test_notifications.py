@@ -1,6 +1,8 @@
 """Telegram notification integration tests — skipped if env vars not set."""
 import os
+
 import pytest
+
 from flora.notifications import send_telegram, send_daily_summary
 
 SKIP_IF_NO_TELEGRAM = pytest.mark.skipif(

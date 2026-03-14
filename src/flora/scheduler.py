@@ -96,8 +96,14 @@ async def _run_photo_capture(config: AppConfig, db: Database) -> None:
             logger.info("Photo captured for %s: %s", plant.name, result.path)
 
 
-def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
-    """Create and configure the APScheduler instance."""
+async def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
+    """Create and configure the APScheduler instance.
+
+    Queries SQLite for any persisted plug schedules and re-registers their
+    cron jobs so they survive a Pi reboot.
+    """
+    from flora.actuators.smartplug import toggle_plug
+
     scheduler = AsyncIOScheduler()
 
     # Sensor poll: every 30 minutes (configurable)
@@ -144,5 +150,38 @@ def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
         name="Daily photo capture",
         replace_existing=True,
     )
+
+    # Reload persisted plug schedules so cron jobs survive reboots
+    plug = config.plug_by_role("grow_light")
+    if plug is not None:
+        saved = await db.get_plug_schedule(plug.alias)
+        if saved is not None and saved.enabled:
+            on_h, on_m = (int(x) for x in saved.on_time.split(":"))
+            off_h, off_m = (int(x) for x in saved.off_time.split(":"))
+            scheduler.add_job(
+                toggle_plug,
+                trigger="cron",
+                hour=on_h,
+                minute=on_m,
+                args=[plug.host, plug.alias, True],
+                id="grow_light_on",
+                name="Grow light ON",
+                replace_existing=True,
+            )
+            scheduler.add_job(
+                toggle_plug,
+                trigger="cron",
+                hour=off_h,
+                minute=off_m,
+                args=[plug.host, plug.alias, False],
+                id="grow_light_off",
+                name="Grow light OFF",
+                replace_existing=True,
+            )
+            logger.info(
+                "Reloaded grow_light schedule from DB: ON=%s OFF=%s",
+                saved.on_time,
+                saved.off_time,
+            )
 
     return scheduler
