@@ -1,19 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Plant Journals</h1>
-<div class="card">
-<table>
-<thead><tr><th>Time</th><th>Plant</th><th>Type</th><th>Entry</th></tr></thead>
-<tbody>
-{% for e in journals %}
-<tr>
-    <td>{{ e.timestamp.strftime("%Y-%m-%d %H:%M") }}</td>
-    <td><a href="/plants/{{ e.plant_name }}" class="plant-link">{{ e.plant_name }}</a></td>
-    <td>{{ e.entry_type }}</td>
-    <td>{{ e.content }}</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
+
+<div class="page-header fade-up">
+    <div class="page-eyebrow">Plant Memory</div>
+    <h1 class="page-title">Garden <em>Journal</em></h1>
 </div>
+
+<div class="card fade-up-1" style="padding: 0;">
+    {% if journals %}
+    <div class="table-scroll">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Plant</th>
+                <th>Type</th>
+                <th>Entry</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for e in journals %}
+        <tr>
+            <td class="mono" style="color: var(--text-dim); white-space: nowrap; font-size: 0.72rem;">
+                {{ e.timestamp.strftime("%Y-%m-%d %H:%M") }}
+            </td>
+            <td>
+                <a href="/plants/{{ e.plant_name }}" class="plant-link" style="font-size: 0.92rem;">{{ e.plant_name }}</a>
+            </td>
+            <td>
+                <span class="badge badge-{% if e.entry_type == 'observation' %}healthy{% elif e.entry_type == 'alert' %}critical{% elif e.entry_type == 'action' %}wet{% else %}unknown{% endif %}" style="font-size: 0.58rem;">
+                    {{ e.entry_type }}
+                </span>
+            </td>
+            <td style="color: var(--text-muted); line-height: 1.5; max-width: 560px; font-family: 'Cormorant Garamond', serif; font-size: 0.95rem;">
+                {{ e.content }}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div style="padding: 4rem 2rem; text-align: center; color: var(--text-dim);">
+        <div style="font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 300; margin-bottom: 0.5rem; font-style: italic;">No journal entries yet</div>
+        <div style="font-size: 0.8rem; letter-spacing: 0.06em;">Claude will write plant observations here after each reasoning cycle.</div>
+    </div>
+    {% endif %}
+</div>
+
 {% endblock %}

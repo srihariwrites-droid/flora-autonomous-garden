@@ -1,20 +1,61 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Action Log</h1>
-<div class="card">
-<table>
-<thead><tr><th>Time</th><th>Plant</th><th>Action</th><th>Model</th><th>Reasoning</th></tr></thead>
-<tbody>
-{% for a in actions %}
-<tr>
-    <td>{{ a.timestamp.strftime("%Y-%m-%d %H:%M") }}</td>
-    <td>{{ a.plant_name or "—" }}</td>
-    <td>{{ a.action_type }}</td>
-    <td style="color: #888; font-size: 0.8rem;">{{ a.claude_model }}</td>
-    <td>{{ a.reasoning }}</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
+
+<div class="page-header fade-up">
+    <div class="page-eyebrow">Autonomy Log</div>
+    <h1 class="page-title">Action <em>History</em></h1>
 </div>
+
+<div class="card fade-up-1" style="padding: 0;">
+    {% if actions %}
+    <div class="table-scroll">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Plant</th>
+                <th>Action</th>
+                <th class="hide-mobile">Model</th>
+                <th>Reasoning</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for a in actions %}
+        <tr>
+            <td class="mono" style="color: var(--text-dim); white-space: nowrap; font-size: 0.72rem;">
+                {{ a.timestamp.strftime("%Y-%m-%d %H:%M") }}
+            </td>
+            <td>
+                {% if a.plant_name %}
+                <a href="/plants/{{ a.plant_name }}" class="plant-link" style="font-size: 0.92rem;">{{ a.plant_name }}</a>
+                {% else %}
+                <span style="color: var(--text-dim);">—</span>
+                {% endif %}
+            </td>
+            <td>
+                <span class="badge badge-{% if 'water' in a.action_type %}wet{% elif 'escalate' in a.action_type %}critical{% elif 'light' in a.action_type or 'toggle' in a.action_type %}healthy{% else %}unknown{% endif %}">
+                    {{ a.action_type | replace('_', ' ') }}
+                </span>
+            </td>
+            <td class="hide-mobile">
+                <span class="mono" style="font-size: 0.65rem; color: var(--text-dim);">
+                    {{ a.claude_model | truncate(18, true, '…') if a.claude_model else '—' }}
+                </span>
+            </td>
+            <td style="color: var(--text-muted); line-height: 1.45; max-width: 420px;">
+                {{ a.reasoning }}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <div style="padding: 4rem 2rem; text-align: center; color: var(--text-dim);">
+        <div style="font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 300; margin-bottom: 0.5rem; font-style: italic;">No actions yet</div>
+        <div style="font-size: 0.8rem; letter-spacing: 0.06em;">Flora will log every decision here once sensors are connected.</div>
+    </div>
+    {% endif %}
+</div>
+
 {% endblock %}

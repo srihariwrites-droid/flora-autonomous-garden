@@ -11,8 +11,11 @@ from flora.db import AmbientReading, Database, SensorReading
 from flora.sensors.miflora import read_miflora
 from flora.sensors.sht31 import read_sht31
 from flora.sensors.bh1750 import read_bh1750
+from pathlib import Path
+
 from flora.agent.loop import AgentLoop
 from flora.notifications import send_daily_summary
+from flora.sensors.camera import capture_photo
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +87,15 @@ async def _send_daily_summary(config: AppConfig, db: Database) -> None:
     await send_daily_summary(config.telegram_token, config.telegram_chat_id, summaries)
 
 
+async def _run_photo_capture(config: AppConfig, db: Database) -> None:
+    """Capture a daily photo for each plant."""
+    photo_dir = Path("photos")
+    for plant in config.plants:
+        result = await capture_photo(plant.name, save_dir=photo_dir)
+        if result:
+            logger.info("Photo captured for %s: %s", plant.name, result.path)
+
+
 def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
     """Create and configure the APScheduler instance."""
     scheduler = AsyncIOScheduler()
@@ -118,6 +130,18 @@ def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
         args=[config, db],
         id="daily_summary",
         name="Daily summary",
+    )
+
+    # Daily photo capture: 7am every day
+    scheduler.add_job(
+        _run_photo_capture,
+        trigger="cron",
+        hour=7,
+        minute=0,
+        args=[config, db],
+        id="daily_photo",
+        name="Daily photo capture",
+        replace_existing=True,
     )
 
     return scheduler

@@ -1,7 +1,10 @@
 """TOML configuration loader for Flora."""
 from __future__ import annotations
 
-import tomllib
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib  # type: ignore[no-redef]
 from dataclasses import dataclass, field
 from pathlib import Path
 
