@@ -9,7 +9,7 @@
 - [ ] Task 6: Push to GitHub — install gh CLI, create public repo, push, add flora.toml/flora.db/photos/ to .gitignore
 - [x] Task 7: Mobile responsive view — make all dashboard templates work on small screens (≤480px): stack plant cards to 1 column, collapse nav to hamburger menu, make moisture rings and tables readable on mobile
 - [x] Task 8: Algorithmic art animation — add a p5.js generative plant-growth canvas to the overview (index.html) page: animated procedural plants that react to real moisture/health data, dark botanical palette matching existing theme
-- [ ] Task 9: Playwright webapp tests — add `tests/test_dashboard_e2e.py` using playwright-pytest: test index page loads, plant card links work, manual water button triggers HTMX response, journal and actions pages render correctly
+- [x] Task 9: Playwright webapp tests — add `tests/test_dashboard_e2e.py` using playwright-pytest: test index page loads, plant card links work, manual water button triggers HTMX response, journal and actions pages render correctly
 
 ## Implementation Plan
 Full plan with code: `docs/plans/2026-03-14-flora-phase2-pre-hardware.md`
