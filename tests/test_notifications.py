@@ -20,7 +20,6 @@ async def test_send_telegram_message():
     assert result is True
 
 
-@pytest.mark.asyncio
 async def test_send_telegram_skips_when_unconfigured():
     """Returns False gracefully when token is empty."""
     result = await send_telegram("", "", "should not send")
