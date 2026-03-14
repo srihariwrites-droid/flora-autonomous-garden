@@ -139,7 +139,7 @@ async def test_csv_export_includes_readings(tmp_path):
     await db2.connect()
     await db2.insert_sensor_reading(SensorReading(
         plant_name="basil-1",
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         moisture=55.0,
         temperature=22.5,
         light=800,
