@@ -105,3 +105,55 @@ async def test_index_plants_art_json_no_reading(client):
     # The JSON is embedded in a <script> tag — check the page contains mock status values
     # (not "unknown") since no readings have been inserted
     assert '"status": "unknown"' not in resp.text or '"has_reading": false' in resp.text
+
+
+@pytest.mark.asyncio
+async def test_csv_export_returns_csv_empty(client):
+    """CSV export returns 200 with correct headers even when no readings exist."""
+    resp = await client.get("/api/plants/basil-1/export.csv")
+    assert resp.status_code == 200
+    assert "text/csv" in resp.headers["content-type"]
+    assert 'filename="basil-1-history.csv"' in resp.headers["content-disposition"]
+    assert "timestamp,moisture,temperature,light,fertility,battery" in resp.text
+
+
+@pytest.mark.asyncio
+async def test_csv_export_unknown_plant(client):
+    resp = await client.get("/api/plants/does-not-exist/export.csv")
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_csv_export_includes_readings(tmp_path):
+    """CSV export includes inserted sensor readings."""
+    from flora.db import Database, SensorReading
+    from datetime import datetime, timezone
+    from flora.config import load_config
+    from flora.dashboard.app import create_app
+    from httpx import AsyncClient, ASGITransport
+
+    toml = tmp_path / "flora2.toml"
+    toml.write_text(_TOML)
+    config = load_config(str(toml))
+    db2 = Database(tmp_path / "seeded.db")
+    await db2.connect()
+    await db2.insert_sensor_reading(SensorReading(
+        plant_name="basil-1",
+        timestamp=datetime.utcnow(),
+        moisture=55.0,
+        temperature=22.5,
+        light=800,
+        fertility=300,
+        battery=90,
+    ))
+    app2 = create_app(config, db2)
+    async with AsyncClient(transport=ASGITransport(app=app2), base_url="http://test") as ac:
+        resp = await ac.get("/api/plants/basil-1/export.csv")
+    await db2.close()
+
+    assert resp.status_code == 200
+    lines = resp.text.strip().splitlines()
+    assert lines[0] == "timestamp,moisture,temperature,light,fertility,battery"
+    assert len(lines) == 2  # header + 1 row
+    assert "55.0" in lines[1]
+    assert "22.5" in lines[1]
