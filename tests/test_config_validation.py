@@ -848,3 +848,11 @@ def test_notes_control_char_detected():
     raw = {"plants": [_base_plant(notes="bad\x01char")]}
     errors = validate_config(raw)
     assert any("notes" in e and "control" in e for e in errors)
+
+
+def test_moisture_float_min_no_false_cross_field_error():
+    """A float moisture_target_min should produce a type error but NOT a cross-field error."""
+    raw = {"plants": [_base_plant(moisture_target_min=20.5, moisture_target_max=70)]}
+    errors = validate_config(raw)
+    assert any("moisture_target_min" in e and "integer" in e for e in errors)
+    assert not any("must be less than" in e for e in errors)
