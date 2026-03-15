@@ -205,3 +205,67 @@ def test_default_auto_water_min_interval_minutes(tmp_path: Path) -> None:
     basil = cfg.plant_by_name("basil")
     assert basil is not None
     assert basil.auto_water_min_interval_minutes == 15
+
+
+# ---------------------------------------------------------------------------
+# 10. End-to-end load_config with all optional fields (issue #97)
+# ---------------------------------------------------------------------------
+
+_FULL_FEATURED_TOML = """
+[app]
+db_path = "flora.db"
+dashboard_port = 8000
+sensor_poll_interval = 1800
+agent_loop_interval = 7200
+
+[anthropic]
+api_key = "sk-fake-key"
+model = "claude-sonnet-4-6"
+
+[telegram]
+token = "fake-token"
+chat_id = "12345"
+
+[[plants]]
+name = "basil"
+species = "basil"
+sensor_mac = "AA:BB:CC:DD:EE:01"
+pump_gpio = 17
+moisture_target_min = 40
+moisture_target_max = 70
+auto_water_duration_seconds = 8
+auto_water_min_interval_minutes = 15
+auto_water_if_below = 35
+camera_index = 0
+notes = "Kitchen windowsill"
+
+[[smart_plugs]]
+alias = "grow-light"
+host = "192.168.1.10"
+role = "grow_light"
+"""
+
+
+def test_load_config_all_optional_fields(tmp_path: Path) -> None:
+    """Full config with all optional plant and app fields loads without errors."""
+    cfg = load_config(_write(tmp_path, _FULL_FEATURED_TOML))
+    assert isinstance(cfg, AppConfig)
+    basil = cfg.plant_by_name("basil")
+    assert basil is not None
+    assert basil.auto_water_if_below == 35
+    assert basil.camera_index == 0
+    assert basil.notes == "Kitchen windowsill"
+
+
+def test_load_config_raises_with_multiple_errors(tmp_path: Path) -> None:
+    """load_config raises ValueError listing all errors when validation fails."""
+    toml = (
+        "[anthropic]\napi_key = \"sk-fake\"\n"
+        "[[plants]]\n"
+        "name = \"basil\"\nspecies = \"basil\"\n"
+        "sensor_mac = \"BADMAC\"\npump_gpio = 99\n"
+        "moisture_target_min = 80\nmoisture_target_max = 20\n"
+    )
+    import pytest
+    with pytest.raises(ValueError, match="flora.toml validation failed"):
+        load_config(_write(tmp_path, toml))
