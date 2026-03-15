@@ -5,13 +5,17 @@ import csv
 import io
 import json
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
-from flora.config import AppConfig
+from flora.config import AppConfig, append_plant_to_toml
 from flora.db import Database
+
+# GPIO pins commonly available on Pi for relay use (BCM numbering)
+_CANDIDATE_GPIO_PINS = [4, 17, 18, 22, 23, 24, 25, 27]
 
 
 def create_router(
@@ -51,6 +55,17 @@ def create_router(
             "index.html",
             {"plants": plant_data, "ambient": ambient, "actions": actions,
              "plants_art_json": plants_art_json},
+        )
+
+    @router.get("/plants/new", response_class=HTMLResponse)
+    async def commissioning_page(request: Request) -> HTMLResponse:
+        used_gpio = {p.pump_gpio for p in config.plants}
+        free_gpio = [p for p in _CANDIDATE_GPIO_PINS if p not in used_gpio]
+        used_macs = {p.sensor_mac for p in config.plants}
+        return templates.TemplateResponse(
+            request,
+            "commissioning.html",
+            {"free_gpio": free_gpio, "used_macs": used_macs},
         )
 
     @router.get("/plants/{name}", response_class=HTMLResponse)
@@ -155,6 +170,49 @@ def create_router(
             "actions.html",
             {"actions": actions},
         )
+
+    @router.get("/api/commissioning/scan")
+    async def commissioning_scan() -> JSONResponse:
+        """Scan for nearby Mi Flora BLE sensors not already assigned."""
+        used_macs = {p.sensor_mac for p in config.plants}
+        try:
+            from flora.sensors.miflora import scan_miflora  # type: ignore[import]
+            found = await scan_miflora()
+            new_macs = [m for m in found if m not in used_macs]
+            return JSONResponse({"macs": new_macs, "scanned": True})
+        except Exception:
+            # Non-Pi or scan not supported — return empty list with hint
+            return JSONResponse({"macs": [], "scanned": False, "hint": "Enter MAC manually"})
+
+    @router.post("/api/commissioning/test-pump")
+    async def commissioning_test_pump(
+        gpio: int = Form(...),
+        duration: int = Form(default=3),
+    ) -> JSONResponse:
+        from flora.actuators.pump import water_plant as _pump
+        duration = max(1, min(5, duration))
+        success = await _pump(gpio, duration)
+        return JSONResponse({"ok": success, "gpio": gpio, "duration": duration})
+
+    @router.post("/plants/new")
+    async def commissioning_save(
+        name: str = Form(...),
+        species: str = Form(...),
+        sensor_mac: str = Form(...),
+        pump_gpio: int = Form(...),
+        moisture_target_min: int = Form(default=40),
+        moisture_target_max: int = Form(default=70),
+    ) -> RedirectResponse:
+        plant = {
+            "name": name.strip(),
+            "species": species.strip(),
+            "sensor_mac": sensor_mac.strip().upper(),
+            "pump_gpio": pump_gpio,
+            "moisture_target_min": moisture_target_min,
+            "moisture_target_max": moisture_target_max,
+        }
+        append_plant_to_toml(Path("flora.toml"), plant)
+        return RedirectResponse(url=f"/plants/{name.strip()}", status_code=303)
 
     @router.get("/logs", response_class=HTMLResponse)
     async def logs_page(request: Request) -> HTMLResponse:
