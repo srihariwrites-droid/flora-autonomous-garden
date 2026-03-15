@@ -232,28 +232,21 @@ def test_agent_loop_interval_low_boundary(value, should_error):
         assert not any("agent_loop_interval" in e for e in errors)
 
 
-def test_dashboard_port_zero_detected():
-    raw = {"app": {"dashboard_port": 0}, "plants": []}
+@pytest.mark.parametrize("port,should_error", [
+    (0, True),
+    (-1, True),
+    (65536, True),
+    (1, False),
+    (8000, False),
+    (65535, False),
+])
+def test_dashboard_port_boundary(port, should_error):
+    raw = {"app": {"dashboard_port": port}, "plants": []}
     errors = validate_config(raw)
-    assert any("dashboard_port" in e for e in errors)
-
-
-def test_dashboard_port_negative_detected():
-    raw = {"app": {"dashboard_port": -1}, "plants": []}
-    errors = validate_config(raw)
-    assert any("dashboard_port" in e for e in errors)
-
-
-def test_dashboard_port_above_max_detected():
-    raw = {"app": {"dashboard_port": 65536}, "plants": []}
-    errors = validate_config(raw)
-    assert any("dashboard_port" in e for e in errors)
-
-
-def test_dashboard_port_valid_boundaries_pass():
-    for port in (1, 8000, 65535):
-        raw = {"app": {"dashboard_port": port}, "plants": []}
-        assert validate_config(raw) == [], f"Expected no errors for port={port}"
+    if should_error:
+        assert any("dashboard_port" in e for e in errors)
+    else:
+        assert not any("dashboard_port" in e for e in errors)
 
 
 def _base_plug(**overrides) -> dict:
