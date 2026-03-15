@@ -204,7 +204,6 @@ async def test_history_json_shape_and_values(tmp_path):
 
 @pytest.mark.asyncio
 async def test_history_api_includes_fertility_and_light(tmp_path):
-    """GET /api/plants/{name}/history includes fertility and light fields per data point."""
     from flora.db import Database, SensorReading
     from datetime import datetime, timedelta, timezone
     from flora.config import load_config
