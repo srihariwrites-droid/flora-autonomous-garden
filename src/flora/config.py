@@ -153,6 +153,7 @@ def load_config(path: str | Path = "flora.toml") -> AppConfig:
             moisture_target_max=p.get("moisture_target_max", 70),
             auto_water_if_below=p.get("auto_water_if_below"),
             auto_water_duration_seconds=p.get("auto_water_duration_seconds", 8),
+            auto_water_min_interval_minutes=p.get("auto_water_min_interval_minutes", 15),
             camera_index=p.get("camera_index"),
             notes=p.get("notes", ""),
         )
