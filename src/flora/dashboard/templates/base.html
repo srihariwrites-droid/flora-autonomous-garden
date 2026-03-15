@@ -619,6 +619,7 @@
             <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">Overview</a>
             <a href="/actions" class="nav-link {% if '/actions' in request.url.path %}active{% endif %}">Actions</a>
             <a href="/logs" class="nav-link {% if '/logs' in request.url.path %}active{% endif %}">Journal</a>
+            <a href="/plants/new" class="nav-link {% if request.url.path == '/plants/new' %}active{% endif %}">+ Plant</a>
         </div>
         <div class="nav-spacer"></div>
         <div class="nav-badge">

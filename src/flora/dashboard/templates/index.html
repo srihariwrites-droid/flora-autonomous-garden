@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="page-header fade-up">
-    <div class="page-eyebrow">Garden Intelligence</div>
-    <h1 class="page-title"><em>Flora</em> Overview</h1>
+<div class="page-header fade-up" style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+    <div>
+        <div class="page-eyebrow">Garden Intelligence</div>
+        <h1 class="page-title"><em>Flora</em> Overview</h1>
+    </div>
+    <a href="/plants/new" class="btn" style="margin-top:0.5rem;">+ Add plant</a>
 </div>
 
 <!-- Botanical art canvas — p5.js generative plant visualization -->
