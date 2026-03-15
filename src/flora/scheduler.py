@@ -46,21 +46,30 @@ async def _poll_sensors(config: AppConfig, db: Database) -> None:
         # Auto-water rule: water immediately if configured threshold is breached
         threshold = plant.auto_water_if_below
         if threshold is not None and reading.moisture is not None and reading.moisture < threshold:
-            duration = max(5, min(30, plant.auto_water_duration_seconds))
-            logger.info(
-                "Auto-water triggered for %s: moisture=%.1f%% < %d%%",
-                plant.name, reading.moisture, threshold,
-            )
-            from flora.actuators.pump import water_plant as _pump
-            await _pump(plant.pump_gpio, duration)
-            await db.log_action(ActionRecord(
-                plant_name=plant.name,
-                timestamp=now,
-                action_type="auto_water",
-                parameters={"duration_seconds": duration, "moisture": reading.moisture, "threshold": threshold},
-                reasoning=f"Auto-water rule: moisture {reading.moisture:.1f}% < {threshold}%",
-                claude_model="rule",
-            ))
+            # Enforce per-plant minimum interval between auto-water firings
+            min_interval_hours = plant.auto_water_min_interval_minutes / 60
+            recent = await db.count_recent_same_action(plant.name, "auto_water", hours=min_interval_hours)
+            if recent > 0:
+                logger.debug(
+                    "Auto-water skipped for %s: watered within last %d min",
+                    plant.name, plant.auto_water_min_interval_minutes,
+                )
+            else:
+                duration = max(5, min(30, plant.auto_water_duration_seconds))
+                logger.info(
+                    "Auto-water triggered for %s: moisture=%.1f%% < %d%%",
+                    plant.name, reading.moisture, threshold,
+                )
+                from flora.actuators.pump import water_plant as _pump
+                await _pump(plant.pump_gpio, duration)
+                await db.log_action(ActionRecord(
+                    plant_name=plant.name,
+                    timestamp=now,
+                    action_type="auto_water",
+                    parameters={"duration_seconds": duration, "moisture": reading.moisture, "threshold": threshold},
+                    reasoning=f"Auto-water rule: moisture {reading.moisture:.1f}% < {threshold}%",
+                    claude_model="rule",
+                ))
 
         # Watering-effectiveness watcher — only relevant for plants with auto-water
         if plant.auto_water_if_below is not None:
