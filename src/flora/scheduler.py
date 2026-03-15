@@ -3,15 +3,15 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
+from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler  # type: ignore[import]
 
 from flora.config import AppConfig
-from flora.db import AmbientReading, Database, SensorReading
+from flora.db import ActionRecord, AmbientReading, Database, SensorReading
 from flora.sensors.miflora import read_miflora
 from flora.sensors.sht31 import read_sht31
 from flora.sensors.bh1750 import read_bh1750
-from pathlib import Path
 
 from flora.agent.loop import AgentLoop
 from flora.notifications import send_daily_summary
@@ -41,6 +41,25 @@ async def _poll_sensors(config: AppConfig, db: Database) -> None:
             battery=reading.battery,
         ))
         logger.debug("Stored reading for %s: moisture=%.1f%%", plant.name, reading.moisture)
+
+        # Auto-water rule: water immediately if configured threshold is breached
+        threshold = plant.auto_water_if_below
+        if threshold is not None and reading.moisture is not None and reading.moisture < threshold:
+            duration = max(5, min(30, plant.auto_water_duration_seconds))
+            logger.info(
+                "Auto-water triggered for %s: moisture=%.1f%% < %d%%",
+                plant.name, reading.moisture, threshold,
+            )
+            from flora.actuators.pump import water_plant as _pump
+            await _pump(plant.pump_gpio, duration)
+            await db.log_action(ActionRecord(
+                plant_name=plant.name,
+                timestamp=now,
+                action_type="auto_water",
+                parameters={"duration_seconds": duration, "moisture": reading.moisture, "threshold": threshold},
+                reasoning=f"Auto-water rule: moisture {reading.moisture:.1f}% < {threshold}%",
+                claude_model="rule",
+            ))
 
     # Poll ambient sensors
     sht31 = await read_sht31()
