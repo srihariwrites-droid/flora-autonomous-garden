@@ -499,3 +499,36 @@ def test_smart_plug_unique_hosts_pass():
         ],
     }
     assert validate_config(raw) == []
+
+
+def test_moisture_target_min_float_detected():
+    raw = {"plants": [_base_plant(moisture_target_min=40.5, moisture_target_max=70)]}
+    errors = validate_config(raw)
+    assert any("moisture_target_min" in e for e in errors)
+
+
+def test_moisture_target_max_float_detected():
+    raw = {"plants": [_base_plant(moisture_target_min=40, moisture_target_max=70.5)]}
+    errors = validate_config(raw)
+    assert any("moisture_target_max" in e for e in errors)
+
+
+def test_moisture_target_integer_values_pass():
+    raw = {"plants": [_base_plant(moisture_target_min=40, moisture_target_max=70)]}
+    assert validate_config(raw) == []
+
+
+def test_anthropic_model_empty_detected():
+    raw = {"plants": [], "anthropic": {"api_key": "sk-test", "model": ""}}
+    errors = validate_config(raw)
+    assert any("model" in e for e in errors)
+
+
+def test_anthropic_model_non_empty_passes():
+    raw = {"plants": [], "anthropic": {"api_key": "sk-test", "model": "claude-sonnet-4-6"}}
+    assert validate_config(raw) == []
+
+
+def test_anthropic_model_absent_passes():
+    raw = {"plants": [], "anthropic": {"api_key": "sk-test"}}
+    assert validate_config(raw) == []
