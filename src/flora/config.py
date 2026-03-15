@@ -12,6 +12,8 @@ from pathlib import Path
 
 _MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 _KNOWN_SPECIES = {"basil", "parsley", "mint", "chives", "coriander"}
+# Safe characters for plant names used in dashboard URLs and log messages
+_NAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
 # IPv4 (octet-range clamped 0-255) or RFC-1123 hostname labels
 _HOST_RE = re.compile(
     r"^(?:"
@@ -121,6 +123,12 @@ def validate_config(raw: dict) -> list[str]:
 
         name = p.get("name")
         if name is not None:
+            if not name:
+                errors.append(f"{label}: name must not be empty")
+            elif not _NAME_RE.match(name):
+                errors.append(
+                    f"{label}: name must contain only letters, digits, underscores, or hyphens (got {name!r})"
+                )
             if name in seen_names:
                 errors.append(f"{label}: duplicate plant name '{name}'")
             seen_names.add(name)

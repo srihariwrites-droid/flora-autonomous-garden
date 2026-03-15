@@ -612,3 +612,28 @@ def test_plug_host_invalid_format_detected():
         raw = {"plants": [], "smart_plugs": [_base_plug(host=host)]}
         errors = validate_config(raw)
         assert any("host" in e for e in errors), f"Expected error for host={host!r}"
+
+
+def test_plant_name_valid_chars_pass():
+    for name in ("basil", "my-herb", "herb_1", "Mint", "coriander-2"):
+        raw = {"plants": [_base_plant(name=name)]}
+        assert validate_config(raw) == [], f"Expected no errors for name={name!r}"
+
+
+def test_plant_name_with_space_detected():
+    raw = {"plants": [_base_plant(name="my basil")]}
+    errors = validate_config(raw)
+    assert any("name" in e for e in errors)
+
+
+def test_plant_name_with_special_char_detected():
+    for name in ("basil!", "herb@home", "mint/1"):
+        raw = {"plants": [_base_plant(name=name)]}
+        errors = validate_config(raw)
+        assert any("name" in e for e in errors), f"Expected error for name={name!r}"
+
+
+def test_plant_name_empty_detected():
+    raw = {"plants": [_base_plant(name="")]}
+    errors = validate_config(raw)
+    assert any("name" in e for e in errors)
