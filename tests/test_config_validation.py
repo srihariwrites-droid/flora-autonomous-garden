@@ -344,3 +344,24 @@ def test_species_all_known_values_pass():
     for species in ("basil", "parsley", "mint", "chives", "coriander"):
         raw = {"plants": [_base_plant(species=species)]}
         assert validate_config(raw) == [], f"Expected no errors for species={species!r}"
+
+
+def test_camera_index_negative_detected():
+    raw = {"plants": [_base_plant(camera_index=-1)]}
+    errors = validate_config(raw)
+    assert any("camera_index" in e for e in errors)
+
+
+def test_camera_index_zero_passes():
+    raw = {"plants": [_base_plant(camera_index=0)]}
+    assert validate_config(raw) == []
+
+
+def test_camera_index_positive_passes():
+    raw = {"plants": [_base_plant(camera_index=2)]}
+    assert validate_config(raw) == []
+
+
+def test_camera_index_absent_passes():
+    raw = {"plants": [_base_plant()]}
+    assert validate_config(raw) == []

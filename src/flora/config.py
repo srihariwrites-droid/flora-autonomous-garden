@@ -151,6 +151,12 @@ def validate_config(raw: dict) -> list[str]:
                 f"{label}: species must be one of {', '.join(sorted(_KNOWN_SPECIES))} (got {species!r})"
             )
 
+        camera_index = p.get("camera_index")
+        if camera_index is not None and camera_index < 0:
+            errors.append(
+                f"{label}: camera_index must be >= 0 (got {camera_index!r})"
+            )
+
     for i, sp in enumerate(raw.get("smart_plugs", [])):
         label = f"Smart plug #{i + 1}"
         for field_name in ("alias", "host", "role"):
