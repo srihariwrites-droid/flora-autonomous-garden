@@ -383,3 +383,24 @@ def test_db_path_non_empty_passes():
 def test_db_path_absent_passes():
     raw = {"plants": [_base_plant()]}
     assert validate_config(raw) == []
+
+
+def test_notes_too_long_detected():
+    raw = {"plants": [_base_plant(notes="x" * 501)]}
+    errors = validate_config(raw)
+    assert any("notes" in e for e in errors)
+
+
+def test_notes_at_limit_passes():
+    raw = {"plants": [_base_plant(notes="x" * 500)]}
+    assert validate_config(raw) == []
+
+
+def test_notes_empty_passes():
+    raw = {"plants": [_base_plant(notes="")]}
+    assert validate_config(raw) == []
+
+
+def test_notes_absent_passes():
+    raw = {"plants": [_base_plant()]}
+    assert validate_config(raw) == []
