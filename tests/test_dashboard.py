@@ -157,3 +157,46 @@ async def test_csv_export_includes_readings(tmp_path):
     assert len(lines) == 2  # header + 1 row
     assert "55.0" in lines[1]
     assert "22.5" in lines[1]
+
+
+@pytest.mark.asyncio
+async def test_history_json_shape_and_values(tmp_path):
+    """history.json endpoint returns correct shape and values for inserted readings."""
+    from flora.db import Database, SensorReading
+    from datetime import datetime, timedelta, timezone
+    from flora.config import load_config
+    from flora.dashboard.app import create_app
+    from httpx import AsyncClient, ASGITransport
+
+    toml = tmp_path / "flora3.toml"
+    toml.write_text(_TOML)
+    config = load_config(str(toml))
+    db3 = Database(tmp_path / "sparkline.db")
+    await db3.connect()
+
+    now = datetime.now(timezone.utc)
+    for i, (moisture, temp) in enumerate([(40.0, 21.0), (55.0, 22.0), (70.0, 23.0)]):
+        await db3.insert_sensor_reading(SensorReading(
+            plant_name="basil-1",
+            timestamp=now - timedelta(hours=2 - i),
+            moisture=moisture,
+            temperature=temp,
+            light=500,
+            fertility=200,
+            battery=80,
+        ))
+
+    app3 = create_app(config, db3)
+    async with AsyncClient(transport=ASGITransport(app=app3), base_url="http://test") as ac:
+        resp = await ac.get("/api/plants/basil-1/history.json")
+    await db3.close()
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "timestamps" in body
+    assert "moisture" in body
+    assert "temperature" in body
+    assert len(body["timestamps"]) == 3
+    assert len(body["moisture"]) == 3
+    assert 40.0 in body["moisture"]
+    assert 70.0 in body["moisture"]

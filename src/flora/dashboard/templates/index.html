@@ -252,6 +252,13 @@
     </div>
     {% endif %}
 
+    <!-- Moisture sparkline -->
+    <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.4rem;">7-day moisture</div>
+        <canvas id="chart-{{ p.config.name }}" height="48" style="width:100%; display:block;"></canvas>
+        <div id="chart-{{ p.config.name }}-empty" style="display:none; font-size:0.72rem; color:var(--text-dim); padding: 0.5rem 0;">No data yet</div>
+    </div>
+
     <!-- Footer link -->
     <div style="border-top: 1px solid var(--border); padding-top: 0.85rem; margin-top: auto;">
         <a href="/plants/{{ p.config.name }}" style="font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); text-decoration: none; transition: color 0.2s; font-family: 'JetBrains Mono', monospace;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">
@@ -262,6 +269,51 @@
 </div>
 {% endfor %}
 </div>
+
+<script>
+(function() {
+    var plants = {{ plants | map(attribute='config') | map(attribute='name') | list | tojson }};
+    plants.forEach(function(name) {
+        fetch('/api/plants/' + name + '/history.json')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var canvas = document.getElementById('chart-' + name);
+                var empty  = document.getElementById('chart-' + name + '-empty');
+                if (!data.moisture || data.moisture.length === 0) {
+                    canvas.style.display = 'none';
+                    if (empty) empty.style.display = 'block';
+                    return;
+                }
+                new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: data.timestamps,
+                        datasets: [{
+                            data: data.moisture,
+                            borderColor: '#00E07A',
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            tension: 0.3,
+                            fill: true,
+                            backgroundColor: 'rgba(0,224,122,0.06)',
+                        }]
+                    },
+                    options: {
+                        animation: false,
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                        scales: {
+                            x: { display: false },
+                            y: { display: false, min: 0, max: 100 }
+                        }
+                    }
+                });
+            })
+            .catch(function() {});
+    });
+})();
+</script>
 
 {% if actions %}
 <div class="section">

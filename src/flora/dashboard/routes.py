@@ -110,6 +110,17 @@ def create_router(
         ]
         return JSONResponse({"plant": name, "hours": hours, "readings": data})
 
+    @router.get("/api/plants/{name}/history.json")
+    async def plant_history_sparkline(name: str) -> JSONResponse:
+        """7-day moisture sparkline data for Chart.js (max 100 data points)."""
+        readings = list(reversed(await db.get_sensor_history(name, hours=168, limit=100)))
+
+        return JSONResponse({
+            "timestamps": [r.timestamp.strftime("%Y-%m-%dT%H:%M") for r in readings],
+            "moisture": [r.moisture for r in readings],
+            "temperature": [r.temperature for r in readings],
+        })
+
     @router.get("/api/plants/{name}/export.csv", response_model=None)
     async def export_plant_csv(name: str) -> StreamingResponse | HTMLResponse:
         """CSV download of the last 7 days of sensor readings."""
