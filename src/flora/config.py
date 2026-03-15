@@ -27,6 +27,8 @@ class PlantConfig:
     auto_water_min_interval_minutes: int = 15  # minimum minutes between auto-water firings
     # Camera assignment (index into Picamera2 camera list; None = default 0)
     camera_index: int | None = None
+    # Free-form notes about this plant (optional, e.g. placement, quirks)
+    notes: str = ""
 
 
 @dataclass(frozen=True)
@@ -152,6 +154,7 @@ def load_config(path: str | Path = "flora.toml") -> AppConfig:
             auto_water_if_below=p.get("auto_water_if_below"),
             auto_water_duration_seconds=p.get("auto_water_duration_seconds", 8),
             camera_index=p.get("camera_index"),
+            notes=p.get("notes", ""),
         )
         for p in raw.get("plants", [])
     ]

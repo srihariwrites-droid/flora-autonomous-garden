@@ -25,6 +25,9 @@
     <div style="font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; font-style: italic; margin-top: 0.35rem;">
         {{ plant.species }} &nbsp;·&nbsp; target {{ plant.moisture_target_min }}–{{ plant.moisture_target_max }}%
     </div>
+    {% if plant.notes %}
+    <div style="font-size: 0.78rem; color: var(--text-muted); font-style: italic; margin-top: 0.4rem;">{{ plant.notes }}</div>
+    {% endif %}
 </div>
 
 <div class="grid grid-2" style="margin-bottom: 1.25rem;">
