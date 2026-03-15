@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 _MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+_KNOWN_SPECIES = {"basil", "parsley", "mint", "chives", "coriander"}
 
 
 @dataclass(frozen=True)
@@ -142,6 +143,12 @@ def validate_config(raw: dict) -> list[str]:
         if threshold is not None and not (0 <= threshold <= 100):
             errors.append(
                 f"{label}: auto_water_if_below must be 0-100 (got {threshold!r})"
+            )
+
+        species = p.get("species")
+        if species is not None and species not in _KNOWN_SPECIES:
+            errors.append(
+                f"{label}: species must be one of {', '.join(sorted(_KNOWN_SPECIES))} (got {species!r})"
             )
 
     for i, sp in enumerate(raw.get("smart_plugs", [])):
