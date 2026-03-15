@@ -11,6 +11,12 @@ from flora.config import AppConfig, PlantConfig, SmartPlugConfig, load_config
 _MINIMAL_TOML = """
 [anthropic]
 api_key = "sk-fake-key"
+
+[[plants]]
+name = "basil"
+species = "basil"
+sensor_mac = "AA:BB:CC:DD:EE:01"
+pump_gpio = 17
 """
 
 _FULL_TOML = """
@@ -25,7 +31,7 @@ api_key = "sk-fake-key"
 model = "claude-test-model"
 
 [telegram]
-token = "fake-token"
+token = "123456789:ABCdefGHIjklMNO"
 chat_id = "12345"
 
 [[plants]]
@@ -67,7 +73,7 @@ def test_load_full_config(tmp_path: Path) -> None:
     assert len(cfg.smart_plugs) == 1
     assert cfg.anthropic_api_key == "sk-fake-key"
     assert cfg.anthropic_model == "claude-test-model"
-    assert cfg.telegram_token == "fake-token"
+    assert cfg.telegram_token == "123456789:ABCdefGHIjklMNO"
     assert cfg.telegram_chat_id == "12345"
     assert cfg.db_path == "test.db"
 
@@ -140,9 +146,9 @@ def test_missing_file_raises(tmp_path: Path) -> None:
 # 6. Config with 0 plants works
 # ---------------------------------------------------------------------------
 
-def test_zero_plants(tmp_path: Path) -> None:
+def test_minimal_config_defaults(tmp_path: Path) -> None:
     cfg = load_config(_write(tmp_path, _MINIMAL_TOML))
-    assert cfg.plants == []
+    assert len(cfg.plants) == 1
     assert cfg.smart_plugs == []
 
 
@@ -223,7 +229,7 @@ api_key = "sk-fake-key"
 model = "claude-sonnet-4-6"
 
 [telegram]
-token = "fake-token"
+token = "123456789:ABCdefGHIjklMNO"
 chat_id = "12345"
 
 [[plants]]
@@ -267,5 +273,21 @@ def test_load_config_raises_with_multiple_errors(tmp_path: Path) -> None:
         "moisture_target_min = 80\nmoisture_target_max = 20\n"
     )
     import pytest
+    with pytest.raises(ValueError, match="flora.toml validation failed"):
+        load_config(_write(tmp_path, toml))
+
+
+# ---------------------------------------------------------------------------
+# 11. load_config raises when intervals exceed max (issue #118)
+# ---------------------------------------------------------------------------
+
+def test_load_config_raises_when_sensor_poll_interval_exceeds_max(tmp_path: Path) -> None:
+    toml = "[anthropic]\napi_key = \"sk-fake\"\n[app]\nsensor_poll_interval = 99999\n"
+    with pytest.raises(ValueError, match="flora.toml validation failed"):
+        load_config(_write(tmp_path, toml))
+
+
+def test_load_config_raises_when_agent_loop_interval_exceeds_max(tmp_path: Path) -> None:
+    toml = "[anthropic]\napi_key = \"sk-fake\"\n[app]\nagent_loop_interval = 99999\n"
     with pytest.raises(ValueError, match="flora.toml validation failed"):
         load_config(_write(tmp_path, toml))
