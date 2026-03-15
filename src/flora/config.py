@@ -82,8 +82,8 @@ def validate_config(raw: dict) -> list[str]:
         val = app.get(field_name)
         if val is not None and not isinstance(val, int):
             errors.append(f"[app] {field_name} must be an integer (got {val!r})")
-        elif val is not None and not (val >= 1):
-            errors.append(f"[app] {field_name} must be >= 1 (got {val!r})")
+        elif val is not None and not (1 <= val <= 86400):
+            errors.append(f"[app] {field_name} must be 1-86400 (got {val!r})")
 
     port = app.get("dashboard_port")
     if port is not None and not isinstance(port, int):
