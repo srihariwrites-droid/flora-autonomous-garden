@@ -180,14 +180,31 @@ def validate_config(raw: dict) -> list[str]:
                 f"{label}: notes must be <= 500 characters (got {len(notes)})"
             )
 
+    seen_plug_aliases: set[str] = set()
+    seen_plug_hosts: set[str] = set()
+
     for i, sp in enumerate(raw.get("smart_plugs", [])):
         label = f"Smart plug #{i + 1}"
         for field_name in ("alias", "host", "role"):
             if field_name not in sp:
                 errors.append(f"{label}: missing required field '{field_name}'")
+
+        alias = sp.get("alias")
+        if alias is not None:
+            if alias in seen_plug_aliases:
+                errors.append(f"{label}: duplicate alias '{alias}'")
+            else:
+                seen_plug_aliases.add(alias)
+
         host = sp.get("host")
         if host is not None and not host:
             errors.append(f"{label}: host must not be empty")
+        elif host is not None:
+            if host in seen_plug_hosts:
+                errors.append(f"{label}: duplicate host '{host}'")
+            else:
+                seen_plug_hosts.add(host)
+
         role = sp.get("role")
         if role is not None and role not in ("grow_light", "humidifier", "fan"):
             errors.append(

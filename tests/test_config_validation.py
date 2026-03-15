@@ -453,3 +453,49 @@ def test_pump_gpio_float_detected():
     raw = {"plants": [_base_plant(pump_gpio=17.0)]}
     errors = validate_config(raw)
     assert any("pump_gpio" in e for e in errors)
+
+
+def test_smart_plug_duplicate_alias_detected():
+    raw = {
+        "plants": [],
+        "smart_plugs": [
+            _base_plug(alias="grow-light", host="192.168.1.10"),
+            _base_plug(alias="grow-light", host="192.168.1.11"),
+        ],
+    }
+    errors = validate_config(raw)
+    assert any("duplicate alias" in e for e in errors)
+
+
+def test_smart_plug_unique_aliases_pass():
+    raw = {
+        "plants": [],
+        "smart_plugs": [
+            _base_plug(alias="grow-light", host="192.168.1.10"),
+            _base_plug(alias="humidifier", host="192.168.1.11", role="humidifier"),
+        ],
+    }
+    assert validate_config(raw) == []
+
+
+def test_smart_plug_duplicate_host_detected():
+    raw = {
+        "plants": [],
+        "smart_plugs": [
+            _base_plug(alias="grow-light", host="192.168.1.10"),
+            _base_plug(alias="humidifier", host="192.168.1.10", role="humidifier"),
+        ],
+    }
+    errors = validate_config(raw)
+    assert any("duplicate host" in e for e in errors)
+
+
+def test_smart_plug_unique_hosts_pass():
+    raw = {
+        "plants": [],
+        "smart_plugs": [
+            _base_plug(alias="grow-light", host="192.168.1.10"),
+            _base_plug(alias="humidifier", host="192.168.1.11", role="humidifier"),
+        ],
+    }
+    assert validate_config(raw) == []
