@@ -20,6 +20,8 @@ class PlantConfig:
     # Optional deterministic auto-water rule (no Claude API needed)
     auto_water_if_below: int | None = None   # moisture % threshold
     auto_water_duration_seconds: int = 8     # pump seconds (clamped 5-30)
+    # Camera assignment (index into Picamera2 camera list; None = default 0)
+    camera_index: int | None = None
 
 
 @dataclass(frozen=True)
@@ -72,6 +74,7 @@ def load_config(path: str | Path = "flora.toml") -> AppConfig:
             moisture_target_max=p.get("moisture_target_max", 70),
             auto_water_if_below=p.get("auto_water_if_below"),
             auto_water_duration_seconds=p.get("auto_water_duration_seconds", 8),
+            camera_index=p.get("camera_index"),
         )
         for p in raw.get("plants", [])
     ]
