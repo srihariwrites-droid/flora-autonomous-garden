@@ -89,6 +89,9 @@ def validate_config(raw: dict) -> list[str]:
     api_key = anthropic.get("api_key")
     if api_key is not None and not api_key:
         errors.append("[anthropic] api_key must not be empty")
+    model = anthropic.get("model")
+    if model is not None and not model:
+        errors.append("[anthropic] model must not be empty")
 
     plants = raw.get("plants", [])
 
@@ -131,11 +134,19 @@ def validate_config(raw: dict) -> list[str]:
 
         mn = p.get("moisture_target_min")
         mx = p.get("moisture_target_max")
-        if mn is not None and not (0 <= mn <= 100):
+        if mn is not None and not isinstance(mn, int):
+            errors.append(
+                f"{label}: moisture_target_min must be an integer (got {mn!r})"
+            )
+        elif mn is not None and not (0 <= mn <= 100):
             errors.append(
                 f"{label}: moisture_target_min must be 0-100 (got {mn!r})"
             )
-        if mx is not None and not (0 <= mx <= 100):
+        if mx is not None and not isinstance(mx, int):
+            errors.append(
+                f"{label}: moisture_target_max must be an integer (got {mx!r})"
+            )
+        elif mx is not None and not (0 <= mx <= 100):
             errors.append(
                 f"{label}: moisture_target_max must be 0-100 (got {mx!r})"
             )
