@@ -582,3 +582,14 @@ def test_auto_water_min_interval_float_detected():
 def test_auto_water_min_interval_integer_passes():
     raw = {"plants": [_base_plant(auto_water_min_interval_minutes=15)]}
     assert validate_config(raw) == []
+
+
+def test_auto_water_if_below_float_detected():
+    raw = {"plants": [_base_plant(auto_water_if_below=45.5)]}
+    errors = validate_config(raw)
+    assert any("auto_water_if_below" in e for e in errors)
+
+
+def test_auto_water_if_below_integer_passes():
+    raw = {"plants": [_base_plant(auto_water_if_below=45)]}
+    assert validate_config(raw) == []

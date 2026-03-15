@@ -180,7 +180,11 @@ def validate_config(raw: dict) -> list[str]:
             )
 
         threshold = p.get("auto_water_if_below")
-        if threshold is not None and not (0 <= threshold <= 100):
+        if threshold is not None and not isinstance(threshold, int):
+            errors.append(
+                f"{label}: auto_water_if_below must be an integer (got {threshold!r})"
+            )
+        elif threshold is not None and not (0 <= threshold <= 100):
             errors.append(
                 f"{label}: auto_water_if_below must be 0-100 (got {threshold!r})"
             )
