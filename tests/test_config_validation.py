@@ -560,3 +560,25 @@ def test_dashboard_port_float_detected():
 def test_dashboard_port_integer_passes():
     raw = {"app": {"dashboard_port": 8000}, "plants": []}
     assert validate_config(raw) == []
+
+
+def test_auto_water_duration_float_detected():
+    raw = {"plants": [_base_plant(auto_water_duration_seconds=8.5)]}
+    errors = validate_config(raw)
+    assert any("auto_water_duration_seconds" in e for e in errors)
+
+
+def test_auto_water_duration_integer_passes():
+    raw = {"plants": [_base_plant(auto_water_duration_seconds=8)]}
+    assert validate_config(raw) == []
+
+
+def test_auto_water_min_interval_float_detected():
+    raw = {"plants": [_base_plant(auto_water_min_interval_minutes=15.5)]}
+    errors = validate_config(raw)
+    assert any("auto_water_min_interval_minutes" in e for e in errors)
+
+
+def test_auto_water_min_interval_integer_passes():
+    raw = {"plants": [_base_plant(auto_water_min_interval_minutes=15)]}
+    assert validate_config(raw) == []
