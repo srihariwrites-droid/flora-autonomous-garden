@@ -13,6 +13,7 @@ from flora.sensors.sht31 import read_sht31
 from flora.sensors.bh1750 import read_bh1750
 from pathlib import Path
 
+from flora.actuators.smartplug import toggle_plug
 from flora.agent.loop import AgentLoop
 from flora.notifications import send_daily_summary
 from flora.sensors.camera import capture_photo
@@ -96,8 +97,12 @@ async def _run_photo_capture(config: AppConfig, db: Database) -> None:
             logger.info("Photo captured for %s: %s", plant.name, result.path)
 
 
-def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
-    """Create and configure the APScheduler instance."""
+async def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
+    """Create and configure the APScheduler instance.
+
+    Queries SQLite for any persisted plug schedules and re-registers their
+    cron jobs so they survive a Pi reboot.
+    """
     scheduler = AsyncIOScheduler()
 
     # Sensor poll: every 30 minutes (configurable)
@@ -144,5 +149,45 @@ def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
         name="Daily photo capture",
         replace_existing=True,
     )
+
+    # Reload persisted plug schedules so cron jobs survive reboots
+    plug = config.plug_by_role("grow_light")
+    if plug is not None:
+        saved = await db.get_plug_schedule(plug.alias)
+        if saved is not None and saved.enabled:
+            try:
+                on_h, on_m = (int(x) for x in saved.on_time.split(":"))
+                off_h, off_m = (int(x) for x in saved.off_time.split(":"))
+            except (ValueError, AttributeError):
+                logger.warning(
+                    "Skipping corrupt grow_light schedule (on=%r off=%r)",
+                    saved.on_time, saved.off_time,
+                )
+                return scheduler
+            scheduler.add_job(
+                toggle_plug,
+                trigger="cron",
+                hour=on_h,
+                minute=on_m,
+                args=[plug.host, plug.alias, True],
+                id="grow_light_on",
+                name="Grow light ON",
+                replace_existing=True,
+            )
+            scheduler.add_job(
+                toggle_plug,
+                trigger="cron",
+                hour=off_h,
+                minute=off_m,
+                args=[plug.host, plug.alias, False],
+                id="grow_light_off",
+                name="Grow light OFF",
+                replace_existing=True,
+            )
+            logger.info(
+                "Reloaded grow_light schedule from DB: ON=%s OFF=%s",
+                saved.on_time,
+                saved.off_time,
+            )
 
     return scheduler

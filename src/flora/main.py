@@ -26,7 +26,7 @@ async def _main(config_path: str) -> None:
     await db.connect()
     logger.info("Database connected at %s", config.db_path)
 
-    scheduler = create_scheduler(config, db)
+    scheduler = await create_scheduler(config, db)
     scheduler.start()
     logger.info("Scheduler started")
 
