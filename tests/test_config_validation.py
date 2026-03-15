@@ -374,6 +374,18 @@ def test_db_path_absent_passes():
     assert validate_config(raw) == []
 
 
+def test_db_path_null_byte_detected():
+    raw = {"app": {"db_path": "flora\x00.db"}, "plants": [_base_plant()]}
+    errors = validate_config(raw)
+    assert any("db_path" in e for e in errors)
+
+
+def test_db_path_control_char_detected():
+    raw = {"app": {"db_path": "flora\x01.db"}, "plants": [_base_plant()]}
+    errors = validate_config(raw)
+    assert any("db_path" in e for e in errors)
+
+
 def test_notes_too_long_detected():
     raw = {"plants": [_base_plant(notes="x" * 501)]}
     errors = validate_config(raw)
