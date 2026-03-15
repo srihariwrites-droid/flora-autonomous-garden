@@ -14,7 +14,8 @@ from flora.sensors.sht31 import read_sht31
 from flora.sensors.bh1750 import read_bh1750
 
 from flora.agent.loop import AgentLoop
-from flora.notifications import send_daily_summary
+from flora.agent.watchers import check_watering_effectiveness
+from flora.notifications import send_daily_summary, send_telegram
 from flora.sensors.camera import capture_photo
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,30 @@ async def _poll_sensors(config: AppConfig, db: Database) -> None:
                 reasoning=f"Auto-water rule: moisture {reading.moisture:.1f}% < {threshold}%",
                 claude_model="rule",
             ))
+
+        # Watering-effectiveness watcher — only relevant for plants with auto-water
+        if plant.auto_water_if_below is not None:
+            ineffective, fire_count, current_moisture = await check_watering_effectiveness(db, plant)
+            if ineffective:
+                cooldown = await db.count_recent_same_action(plant.name, "pump_alert", hours=12)
+                if cooldown == 0:
+                    msg = (
+                        f"Plant {plant.name}: pump fired {fire_count}\u00d7 in 6h but moisture "
+                        f"unchanged ({current_moisture:.0f}%). Check reservoir/pump."
+                    )
+                    await send_telegram(config.telegram_token, config.telegram_chat_id, msg)
+                    await db.log_action(ActionRecord(
+                        plant_name=plant.name,
+                        timestamp=now,
+                        action_type="pump_alert",
+                        parameters={"count": fire_count, "moisture": current_moisture},
+                        reasoning="Auto-watering ineffective — escalated via Telegram",
+                        claude_model="rule",
+                    ))
+                    logger.warning(
+                        "Pump ineffective for %s (%d firings, moisture=%.0f%%)",
+                        plant.name, fire_count, current_moisture,
+                    )
 
     # Poll ambient sensors
     sht31 = await read_sht31()
