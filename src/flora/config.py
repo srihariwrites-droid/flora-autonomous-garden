@@ -73,6 +73,10 @@ def validate_config(raw: dict) -> list[str]:
     if port is not None and not (1 <= port <= 65535):
         errors.append(f"[app] dashboard_port must be 1-65535 (got {port!r})")
 
+    db_path = app.get("db_path")
+    if db_path is not None and not db_path:
+        errors.append("[app] db_path must not be empty")
+
     plants = raw.get("plants", [])
 
     seen_names: set[str] = set()
