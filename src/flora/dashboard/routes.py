@@ -112,6 +112,30 @@ def create_router(
             f'<div class="alert alert-info">Watered {name} for {duration}s: {status}</div>'
         )
 
+    @router.get("/api/health")
+    async def health_api() -> JSONResponse:
+        """System health check: db connectivity and freshness of sensor data."""
+        readings = []
+        for plant in config.plants:
+            r = await db.get_latest_sensor_reading(plant.name)
+            if r is not None:
+                readings.append(r)
+
+        if readings:
+            newest = max(readings, key=lambda r: r.timestamp)
+            age_seconds = (datetime.utcnow() - newest.timestamp).total_seconds()
+            status = "ok" if age_seconds < 3600 else "degraded"
+        else:
+            age_seconds = None
+            status = "degraded"
+
+        return JSONResponse({
+            "status": status,
+            "plants": len(config.plants),
+            "latest_reading_age_seconds": age_seconds,
+            "db": "connected",
+        })
+
     @router.get("/api/plants/{name}/history")
     async def plant_history_api(name: str, hours: int = 48) -> JSONResponse:
         """JSON endpoint for Chart.js sensor history."""
