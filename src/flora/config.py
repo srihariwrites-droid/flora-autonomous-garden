@@ -160,13 +160,21 @@ def validate_config(raw: dict) -> list[str]:
             )
 
         duration = p.get("auto_water_duration_seconds")
-        if duration is not None and not (1 <= duration <= 30):
+        if duration is not None and not isinstance(duration, int):
+            errors.append(
+                f"{label}: auto_water_duration_seconds must be an integer (got {duration!r})"
+            )
+        elif duration is not None and not (1 <= duration <= 30):
             errors.append(
                 f"{label}: auto_water_duration_seconds must be 1-30 (got {duration!r})"
             )
 
         interval = p.get("auto_water_min_interval_minutes")
-        if interval is not None and not (interval >= 1):
+        if interval is not None and not isinstance(interval, int):
+            errors.append(
+                f"{label}: auto_water_min_interval_minutes must be an integer (got {interval!r})"
+            )
+        elif interval is not None and not (interval >= 1):
             errors.append(
                 f"{label}: auto_water_min_interval_minutes must be >= 1 (got {interval!r})"
             )
