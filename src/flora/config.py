@@ -102,6 +102,14 @@ def validate_config(raw: dict) -> list[str]:
 
         mn = p.get("moisture_target_min")
         mx = p.get("moisture_target_max")
+        if mn is not None and not (0 <= mn <= 100):
+            errors.append(
+                f"{label}: moisture_target_min must be 0-100 (got {mn!r})"
+            )
+        if mx is not None and not (0 <= mx <= 100):
+            errors.append(
+                f"{label}: moisture_target_max must be 0-100 (got {mx!r})"
+            )
         if mn is not None and mx is not None and mn >= mx:
             errors.append(
                 f"{label}: moisture_target_min ({mn}) must be less than moisture_target_max ({mx})"
