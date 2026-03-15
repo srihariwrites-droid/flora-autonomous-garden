@@ -787,3 +787,18 @@ def test_api_key_set_with_no_plants_detected():
 def test_api_key_absent_with_no_plants_passes():
     raw = {"plants": []}
     assert validate_config(raw) == []
+
+
+def test_pump_gpio_reserved_pins_detected():
+    for pin in (0, 1, 14, 15):
+        p = _base_plant(pump_gpio=pin)
+        raw = {"plants": [p]}
+        errors = validate_config(raw)
+        assert any("reserved" in e for e in errors), f"Expected reserved error for pin {pin}"
+
+
+def test_pump_gpio_non_reserved_passes():
+    for pin in (17, 27, 2, 3, 4):
+        p = _base_plant(pump_gpio=pin)
+        raw = {"plants": [p]}
+        assert validate_config(raw) == [], f"Expected no errors for pin {pin}"
