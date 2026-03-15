@@ -27,6 +27,8 @@ class PlantConfig:
     auto_water_min_interval_minutes: int = 15  # minimum minutes between auto-water firings
     # Camera assignment (index into Picamera2 camera list; None = default 0)
     camera_index: int | None = None
+    # Free-form notes about this plant (optional, e.g. placement, quirks)
+    notes: str = ""
 
 
 @dataclass(frozen=True)
