@@ -673,7 +673,7 @@ def test_model_valid_passes():
 
 
 def test_model_too_long_detected():
-    raw = {"anthropic": {"api_key": "sk-ant-" + "x" * 20, "model": "x" * 101}, "plants": [_base_plant()]}
+    raw = {"anthropic": {"api_key": "sk-ant-" + "x" * 20, "model": "x" * 201}, "plants": [_base_plant()]}
     errors = validate_config(raw)
     assert any("model" in e for e in errors)
 
@@ -690,8 +690,19 @@ def test_model_with_newline_detected():
     assert any("model" in e for e in errors)
 
 
-def test_model_exactly_100_chars_passes():
-    raw = {"anthropic": {"api_key": "sk-ant-" + "x" * 20, "model": "a" * 100}, "plants": [_base_plant()]}
+def test_model_exactly_200_chars_passes():
+    raw = {"anthropic": {"api_key": "sk-ant-" + "x" * 20, "model": "a" * 200}, "plants": [_base_plant()]}
+    assert validate_config(raw) == []
+
+
+def test_model_too_short_detected():
+    raw = {"anthropic": {"api_key": "sk-ant-" + "x" * 20, "model": "ab"}, "plants": [_base_plant()]}
+    errors = validate_config(raw)
+    assert any("model" in e for e in errors)
+
+
+def test_model_min_length_passes():
+    raw = {"anthropic": {"api_key": "sk-ant-" + "x" * 20, "model": "abc"}, "plants": [_base_plant()]}
     assert validate_config(raw) == []
 
 
