@@ -117,6 +117,10 @@ def validate_config(raw: dict) -> list[str]:
     api_key = anthropic.get("api_key")
     if api_key is not None and not api_key:
         errors.append("[anthropic] api_key must not be empty")
+    elif api_key is not None and len(api_key) < 20:
+        errors.append(f"[anthropic] api_key must be at least 20 characters (got {len(api_key)})")
+    elif api_key is not None and any(c in api_key for c in (" ", "\t", "\n")):
+        errors.append("[anthropic] api_key must not contain whitespace")
     model = anthropic.get("model")
     if model is not None and not model:
         errors.append("[anthropic] model must not be empty")
