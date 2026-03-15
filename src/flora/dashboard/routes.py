@@ -113,13 +113,7 @@ def create_router(
     @router.get("/api/plants/{name}/history.json")
     async def plant_history_sparkline(name: str) -> JSONResponse:
         """7-day moisture sparkline data for Chart.js (max 100 data points)."""
-        readings = await db.get_sensor_history(name, hours=168, limit=10000)
-        readings = list(reversed(readings))  # oldest first
-
-        # Downsample to at most 100 points
-        if len(readings) > 100:
-            step = len(readings) / 100
-            readings = [readings[int(i * step)] for i in range(100)]
+        readings = list(reversed(await db.get_sensor_history(name, hours=168, limit=100)))
 
         return JSONResponse({
             "timestamps": [r.timestamp.strftime("%Y-%m-%dT%H:%M") for r in readings],

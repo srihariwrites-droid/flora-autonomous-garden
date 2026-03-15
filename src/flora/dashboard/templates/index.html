@@ -272,7 +272,7 @@
 
 <script>
 (function() {
-    var plants = [{% for p in plants %}"{{ p.config.name }}"{% if not loop.last %}, {% endif %}{% endfor %}];
+    var plants = {{ plants | map(attribute='config') | map(attribute='name') | list | tojson }};
     plants.forEach(function(name) {
         fetch('/api/plants/' + name + '/history.json')
             .then(function(r) { return r.json(); })
