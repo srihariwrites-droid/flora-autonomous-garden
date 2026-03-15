@@ -138,6 +138,15 @@ def validate_config(raw: dict) -> list[str]:
                 f"{label}: auto_water_min_interval_minutes must be >= 1 (got {interval!r})"
             )
 
+    for i, sp in enumerate(raw.get("smart_plugs", [])):
+        label = f"Smart plug #{i + 1}"
+        for field_name in ("alias", "host", "role"):
+            if field_name not in sp:
+                errors.append(f"{label}: missing required field '{field_name}'")
+        host = sp.get("host")
+        if host is not None and not host:
+            errors.append(f"{label}: host must not be empty")
+
     return errors
 
 

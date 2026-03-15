@@ -260,3 +260,38 @@ def test_dashboard_port_valid_boundaries_pass():
     for port in (1, 8000, 65535):
         raw = {"app": {"dashboard_port": port}, "plants": []}
         assert validate_config(raw) == [], f"Expected no errors for port={port}"
+
+
+def _base_plug(**overrides) -> dict:
+    sp = {"alias": "grow-light", "host": "192.168.1.10", "role": "grow_light"}
+    sp.update(overrides)
+    return sp
+
+
+def test_smart_plug_missing_host_detected():
+    raw = {"plants": [], "smart_plugs": [{"alias": "grow-light", "role": "grow_light"}]}
+    errors = validate_config(raw)
+    assert any("missing required field 'host'" in e for e in errors)
+
+
+def test_smart_plug_missing_alias_detected():
+    raw = {"plants": [], "smart_plugs": [{"host": "192.168.1.10", "role": "grow_light"}]}
+    errors = validate_config(raw)
+    assert any("missing required field 'alias'" in e for e in errors)
+
+
+def test_smart_plug_missing_role_detected():
+    raw = {"plants": [], "smart_plugs": [{"alias": "grow-light", "host": "192.168.1.10"}]}
+    errors = validate_config(raw)
+    assert any("missing required field 'role'" in e for e in errors)
+
+
+def test_smart_plug_empty_host_detected():
+    raw = {"plants": [], "smart_plugs": [_base_plug(host="")]}
+    errors = validate_config(raw)
+    assert any("host must not be empty" in e for e in errors)
+
+
+def test_smart_plug_valid_config_passes():
+    raw = {"plants": [], "smart_plugs": [_base_plug()]}
+    assert validate_config(raw) == []
