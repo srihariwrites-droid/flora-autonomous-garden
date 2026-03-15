@@ -17,6 +17,9 @@ class PlantConfig:
     pump_gpio: int        # GPIO pin number for relay
     moisture_target_min: int = 40
     moisture_target_max: int = 70
+    # Optional deterministic auto-water rule (no Claude API needed)
+    auto_water_if_below: int | None = None   # moisture % threshold
+    auto_water_duration_seconds: int = 8     # pump seconds (clamped 5-30)
 
 
 @dataclass(frozen=True)
@@ -67,6 +70,8 @@ def load_config(path: str | Path = "flora.toml") -> AppConfig:
             pump_gpio=p["pump_gpio"],
             moisture_target_min=p.get("moisture_target_min", 40),
             moisture_target_max=p.get("moisture_target_max", 70),
+            auto_water_if_below=p.get("auto_water_if_below"),
+            auto_water_duration_seconds=p.get("auto_water_duration_seconds", 8),
         )
         for p in raw.get("plants", [])
     ]
