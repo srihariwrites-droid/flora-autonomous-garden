@@ -819,3 +819,15 @@ def test_api_key_with_space_detected():
     raw = {"anthropic": {"api_key": "sk-ant-valid key with space"}, "plants": [_base_plant()]}
     errors = validate_config(raw)
     assert any("api_key" in e for e in errors)
+
+
+def test_camera_index_valid_passes():
+    for idx in (0, 1, 9):
+        raw = {"plants": [_base_plant(camera_index=idx)]}
+        assert validate_config(raw) == [], f"Expected no errors for camera_index={idx}"
+
+
+def test_camera_index_above_max_detected():
+    raw = {"plants": [_base_plant(camera_index=10)]}
+    errors = validate_config(raw)
+    assert any("camera_index" in e for e in errors)

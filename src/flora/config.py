@@ -246,9 +246,9 @@ def validate_config(raw: dict) -> list[str]:
             )
 
         camera_index = p.get("camera_index")
-        if camera_index is not None and camera_index < 0:
+        if camera_index is not None and not (0 <= camera_index <= 9):
             errors.append(
-                f"{label}: camera_index must be >= 0 (got {camera_index!r})"
+                f"{label}: camera_index must be 0-9 (got {camera_index!r})"
             )
 
         notes = p.get("notes")
