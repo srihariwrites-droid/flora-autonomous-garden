@@ -831,3 +831,20 @@ def test_camera_index_above_max_detected():
     raw = {"plants": [_base_plant(camera_index=10)]}
     errors = validate_config(raw)
     assert any("camera_index" in e for e in errors)
+
+
+def test_notes_normal_text_passes():
+    raw = {"plants": [_base_plant(notes="Kitchen windowsill\nWatered daily.")]}
+    assert validate_config(raw) == []
+
+
+def test_notes_null_byte_detected():
+    raw = {"plants": [_base_plant(notes="good notes\x00bad")]}
+    errors = validate_config(raw)
+    assert any("notes" in e and "control" in e for e in errors)
+
+
+def test_notes_control_char_detected():
+    raw = {"plants": [_base_plant(notes="bad\x01char")]}
+    errors = validate_config(raw)
+    assert any("notes" in e and "control" in e for e in errors)

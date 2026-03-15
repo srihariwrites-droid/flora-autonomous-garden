@@ -256,6 +256,10 @@ def validate_config(raw: dict) -> list[str]:
             errors.append(
                 f"{label}: notes must be <= 500 characters (got {len(notes)})"
             )
+        if notes is not None and any(
+            ord(c) < 32 and c not in ("\t", "\n") for c in notes
+        ):
+            errors.append(f"{label}: notes must not contain control characters")
 
     seen_plug_aliases: set[str] = set()
     seen_plug_hosts: set[str] = set()
