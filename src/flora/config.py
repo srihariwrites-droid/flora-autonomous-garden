@@ -161,6 +161,12 @@ def validate_config(raw: dict) -> list[str]:
                 f"{label}: camera_index must be >= 0 (got {camera_index!r})"
             )
 
+        notes = p.get("notes")
+        if notes is not None and len(notes) > 500:
+            errors.append(
+                f"{label}: notes must be <= 500 characters (got {len(notes)})"
+            )
+
     for i, sp in enumerate(raw.get("smart_plugs", [])):
         label = f"Smart plug #{i + 1}"
         for field_name in ("alias", "host", "role"):
