@@ -125,6 +125,11 @@ def validate_config(raw: dict) -> list[str]:
 
     plants = raw.get("plants", [])
 
+    if api_key and not plants:
+        errors.append(
+            "[app] at least one [[plants]] entry is required when anthropic.api_key is set"
+        )
+
     seen_names: set[str] = set()
     seen_macs: set[str] = set()
     seen_gpios: set[int] = set()

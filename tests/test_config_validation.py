@@ -442,7 +442,7 @@ def test_anthropic_api_key_empty_detected():
 
 
 def test_anthropic_api_key_non_empty_passes():
-    raw = {"plants": [], "anthropic": {"api_key": "sk-test-key"}}
+    raw = {"plants": [_base_plant()], "anthropic": {"api_key": "sk-test-key"}}
     assert validate_config(raw) == []
 
 
@@ -521,18 +521,18 @@ def test_moisture_target_integer_values_pass():
 
 
 def test_anthropic_model_empty_detected():
-    raw = {"plants": [], "anthropic": {"api_key": "sk-test", "model": ""}}
+    raw = {"plants": [_base_plant()], "anthropic": {"api_key": "sk-test", "model": ""}}
     errors = validate_config(raw)
     assert any("model" in e for e in errors)
 
 
 def test_anthropic_model_non_empty_passes():
-    raw = {"plants": [], "anthropic": {"api_key": "sk-test", "model": "claude-sonnet-4-6"}}
+    raw = {"plants": [_base_plant()], "anthropic": {"api_key": "sk-test", "model": "claude-sonnet-4-6"}}
     assert validate_config(raw) == []
 
 
 def test_anthropic_model_absent_passes():
-    raw = {"plants": [], "anthropic": {"api_key": "sk-test"}}
+    raw = {"plants": [_base_plant()], "anthropic": {"api_key": "sk-test"}}
     assert validate_config(raw) == []
 
 
@@ -669,30 +669,30 @@ def test_plug_alias_empty_detected():
 
 
 def test_model_valid_passes():
-    raw = {"anthropic": {"api_key": "sk-fake", "model": "claude-sonnet-4-6"}}
+    raw = {"anthropic": {"api_key": "sk-fake", "model": "claude-sonnet-4-6"}, "plants": [_base_plant()]}
     assert validate_config(raw) == []
 
 
 def test_model_too_long_detected():
-    raw = {"anthropic": {"api_key": "sk-fake", "model": "x" * 101}}
+    raw = {"anthropic": {"api_key": "sk-fake", "model": "x" * 101}, "plants": [_base_plant()]}
     errors = validate_config(raw)
     assert any("model" in e for e in errors)
 
 
 def test_model_with_space_detected():
-    raw = {"anthropic": {"api_key": "sk-fake", "model": "claude sonnet"}}
+    raw = {"anthropic": {"api_key": "sk-fake", "model": "claude sonnet"}, "plants": [_base_plant()]}
     errors = validate_config(raw)
     assert any("model" in e for e in errors)
 
 
 def test_model_with_newline_detected():
-    raw = {"anthropic": {"api_key": "sk-fake", "model": "claude\nsonnet"}}
+    raw = {"anthropic": {"api_key": "sk-fake", "model": "claude\nsonnet"}, "plants": [_base_plant()]}
     errors = validate_config(raw)
     assert any("model" in e for e in errors)
 
 
 def test_model_exactly_100_chars_passes():
-    raw = {"anthropic": {"api_key": "sk-fake", "model": "a" * 100}}
+    raw = {"anthropic": {"api_key": "sk-fake", "model": "a" * 100}, "plants": [_base_plant()]}
     assert validate_config(raw) == []
 
 
@@ -771,3 +771,19 @@ def test_agent_loop_interval_above_max_detected():
     raw = {"app": {"agent_loop_interval": 86401}}
     errors = validate_config(raw)
     assert any("agent_loop_interval" in e for e in errors)
+
+
+def test_api_key_set_with_plants_passes():
+    raw = {"anthropic": {"api_key": "sk-fake"}, "plants": [_base_plant()]}
+    assert validate_config(raw) == []
+
+
+def test_api_key_set_with_no_plants_detected():
+    raw = {"anthropic": {"api_key": "sk-fake"}, "plants": []}
+    errors = validate_config(raw)
+    assert any("plants" in e for e in errors)
+
+
+def test_api_key_absent_with_no_plants_passes():
+    raw = {"plants": []}
+    assert validate_config(raw) == []
