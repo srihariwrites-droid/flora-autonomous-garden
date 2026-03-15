@@ -123,7 +123,11 @@ async def _run_photo_capture(config: AppConfig, db: Database) -> None:
     """Capture a daily photo for each plant."""
     photo_dir = Path("photos")
     for plant in config.plants:
-        result = await capture_photo(plant.name, save_dir=photo_dir)
+        result = await capture_photo(
+            plant.name,
+            save_dir=photo_dir,
+            camera_index=plant.camera_index or 0,
+        )
         if result:
             logger.info("Photo captured for %s: %s", plant.name, result.path)
 

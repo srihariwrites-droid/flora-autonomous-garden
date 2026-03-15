@@ -21,7 +21,11 @@ class PhotoResult:
     path: Path
 
 
-async def capture_photo(plant_name: str, save_dir: Path) -> PhotoResult | None:
+async def capture_photo(
+    plant_name: str,
+    save_dir: Path,
+    camera_index: int = 0,
+) -> PhotoResult | None:
     """Capture a photo of a plant. Returns None on failure."""
     save_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.utcnow()
@@ -29,14 +33,16 @@ async def capture_photo(plant_name: str, save_dir: Path) -> PhotoResult | None:
     path = save_dir / filename
 
     if IS_PI:
-        return await _capture_real(plant_name, path, ts)
+        return await _capture_real(plant_name, path, ts, camera_index)
     return _capture_mock(plant_name, path, ts)
 
 
-async def _capture_real(plant_name: str, path: Path, ts: datetime) -> PhotoResult | None:
+async def _capture_real(
+    plant_name: str, path: Path, ts: datetime, camera_index: int = 0
+) -> PhotoResult | None:
     try:
         from picamera2 import Picamera2  # type: ignore[import]
-        cam = Picamera2()
+        cam = Picamera2(camera_num=camera_index)
         cam.configure(cam.create_still_configuration())
         cam.start()
         cam.capture_file(str(path))
