@@ -204,38 +204,32 @@ def test_auto_water_min_interval_one_passes():
     assert validate_config(raw) == []
 
 
-def test_sensor_poll_interval_zero_detected():
-    raw = {"app": {"sensor_poll_interval": 0}, "plants": []}
+@pytest.mark.parametrize("value,should_error", [
+    (0, True),
+    (-60, True),
+    (1, False),
+])
+def test_sensor_poll_interval_low_boundary(value, should_error):
+    raw = {"app": {"sensor_poll_interval": value}, "plants": []}
     errors = validate_config(raw)
-    assert any("sensor_poll_interval" in e for e in errors)
+    if should_error:
+        assert any("sensor_poll_interval" in e for e in errors)
+    else:
+        assert not any("sensor_poll_interval" in e for e in errors)
 
 
-def test_sensor_poll_interval_negative_detected():
-    raw = {"app": {"sensor_poll_interval": -60}, "plants": []}
+@pytest.mark.parametrize("value,should_error", [
+    (0, True),
+    (-1, True),
+    (1, False),
+])
+def test_agent_loop_interval_low_boundary(value, should_error):
+    raw = {"app": {"agent_loop_interval": value}, "plants": []}
     errors = validate_config(raw)
-    assert any("sensor_poll_interval" in e for e in errors)
-
-
-def test_sensor_poll_interval_one_passes():
-    raw = {"app": {"sensor_poll_interval": 1}, "plants": []}
-    assert validate_config(raw) == []
-
-
-def test_agent_loop_interval_zero_detected():
-    raw = {"app": {"agent_loop_interval": 0}, "plants": []}
-    errors = validate_config(raw)
-    assert any("agent_loop_interval" in e for e in errors)
-
-
-def test_agent_loop_interval_negative_detected():
-    raw = {"app": {"agent_loop_interval": -1}, "plants": []}
-    errors = validate_config(raw)
-    assert any("agent_loop_interval" in e for e in errors)
-
-
-def test_agent_loop_interval_one_passes():
-    raw = {"app": {"agent_loop_interval": 1}, "plants": []}
-    assert validate_config(raw) == []
+    if should_error:
+        assert any("agent_loop_interval" in e for e in errors)
+    else:
+        assert not any("agent_loop_interval" in e for e in errors)
 
 
 def test_dashboard_port_zero_detected():
@@ -751,26 +745,30 @@ def test_telegram_chat_id_non_numeric_detected():
     assert any("chat_id" in e for e in errors)
 
 
-def test_sensor_poll_interval_max_boundary_passes():
-    raw = {"app": {"sensor_poll_interval": 86400}}
-    assert validate_config(raw) == []
-
-
-def test_sensor_poll_interval_above_max_detected():
-    raw = {"app": {"sensor_poll_interval": 86401}}
+@pytest.mark.parametrize("value,should_error", [
+    (86400, False),
+    (86401, True),
+])
+def test_sensor_poll_interval_high_boundary(value, should_error):
+    raw = {"app": {"sensor_poll_interval": value}}
     errors = validate_config(raw)
-    assert any("sensor_poll_interval" in e for e in errors)
+    if should_error:
+        assert any("sensor_poll_interval" in e for e in errors)
+    else:
+        assert not any("sensor_poll_interval" in e for e in errors)
 
 
-def test_agent_loop_interval_max_boundary_passes():
-    raw = {"app": {"agent_loop_interval": 86400}}
-    assert validate_config(raw) == []
-
-
-def test_agent_loop_interval_above_max_detected():
-    raw = {"app": {"agent_loop_interval": 86401}}
+@pytest.mark.parametrize("value,should_error", [
+    (86400, False),
+    (86401, True),
+])
+def test_agent_loop_interval_high_boundary(value, should_error):
+    raw = {"app": {"agent_loop_interval": value}}
     errors = validate_config(raw)
-    assert any("agent_loop_interval" in e for e in errors)
+    if should_error:
+        assert any("agent_loop_interval" in e for e in errors)
+    else:
+        assert not any("agent_loop_interval" in e for e in errors)
 
 
 def test_api_key_set_with_plants_passes():
