@@ -14,7 +14,7 @@ from flora.sensors.sht31 import read_sht31
 from flora.sensors.bh1750 import read_bh1750
 
 from flora.agent.loop import AgentLoop
-from flora.agent.watchers import check_watering_effectiveness
+from flora.agent.watchers import check_critical_moisture, check_watering_effectiveness
 from flora.notifications import send_daily_summary, send_telegram
 from flora.sensors.camera import capture_photo
 
@@ -93,6 +93,30 @@ async def _poll_sensors(config: AppConfig, db: Database) -> None:
                     logger.warning(
                         "Pump ineffective for %s (%d firings, moisture=%.0f%%)",
                         plant.name, fire_count, current_moisture,
+                    )
+
+        # Critical moisture alert — fires when all readings for 2h are below 10%
+        if reading.moisture is not None and reading.moisture < 10:
+            critical = await check_critical_moisture(db, plant)
+            if critical:
+                cooldown = await db.count_recent_same_action(plant.name, "critical_alert", hours=6)
+                if cooldown == 0:
+                    msg = (
+                        f"CRITICAL: {plant.name} moisture is {reading.moisture:.0f}% — "
+                        f"sustained below 10% for 2h. Water immediately!"
+                    )
+                    await send_telegram(config.telegram_token, config.telegram_chat_id, msg)
+                    await db.log_action(ActionRecord(
+                        plant_name=plant.name,
+                        timestamp=now,
+                        action_type="critical_alert",
+                        parameters={"moisture": reading.moisture},
+                        reasoning="Sustained critical moisture (< 10%) for 2h — Telegram alert sent",
+                        claude_model="rule",
+                    ))
+                    logger.warning(
+                        "Critical moisture alert for %s (moisture=%.0f%%)",
+                        plant.name, reading.moisture,
                     )
 
     # Poll ambient sensors

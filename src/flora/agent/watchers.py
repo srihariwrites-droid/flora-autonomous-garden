@@ -45,3 +45,19 @@ async def check_watering_effectiveness(
     baseline = moisture_before if moisture_before is not None else (plant.auto_water_if_below or 0.0)
     ineffective = (current - baseline) < 5.0
     return ineffective, count, current
+
+
+async def check_critical_moisture(
+    db: Database,
+    plant: PlantConfig,
+    hours: int = 2,
+    threshold: float = 10.0,
+) -> bool:
+    """Return True if all readings in the last `hours` are below `threshold`%."""
+    readings = await db.get_sensor_history(plant.name, hours=hours, limit=100)
+    if not readings:
+        return False
+    return all(
+        r.moisture is not None and r.moisture < threshold
+        for r in readings
+    )
