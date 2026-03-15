@@ -307,3 +307,26 @@ def test_smart_plug_all_valid_roles_pass():
     for role in ("grow_light", "humidifier", "fan"):
         raw = {"plants": [], "smart_plugs": [_base_plug(role=role)]}
         assert validate_config(raw) == [], f"Expected no errors for role={role!r}"
+
+
+def test_auto_water_if_below_negative_detected():
+    raw = {"plants": [_base_plant(auto_water_if_below=-1)]}
+    errors = validate_config(raw)
+    assert any("auto_water_if_below" in e for e in errors)
+
+
+def test_auto_water_if_below_above_100_detected():
+    raw = {"plants": [_base_plant(auto_water_if_below=101)]}
+    errors = validate_config(raw)
+    assert any("auto_water_if_below" in e for e in errors)
+
+
+def test_auto_water_if_below_valid_boundaries_pass():
+    for val in (0, 50, 100):
+        raw = {"plants": [_base_plant(auto_water_if_below=val)]}
+        assert validate_config(raw) == [], f"Expected no errors for auto_water_if_below={val}"
+
+
+def test_auto_water_if_below_absent_passes():
+    raw = {"plants": [_base_plant()]}
+    assert validate_config(raw) == []
