@@ -593,3 +593,22 @@ def test_auto_water_if_below_float_detected():
 def test_auto_water_if_below_integer_passes():
     raw = {"plants": [_base_plant(auto_water_if_below=45)]}
     assert validate_config(raw) == []
+
+
+def test_plug_host_valid_ipv4_passes():
+    for host in ("192.168.1.10", "10.0.0.1", "255.255.255.255", "0.0.0.0"):
+        raw = {"plants": [], "smart_plugs": [_base_plug(host=host)]}
+        assert validate_config(raw) == [], f"Expected no errors for host={host!r}"
+
+
+def test_plug_host_valid_hostname_passes():
+    for host in ("myplug", "my-plug", "plug.local", "smart-plug-01.lan"):
+        raw = {"plants": [], "smart_plugs": [_base_plug(host=host)]}
+        assert validate_config(raw) == [], f"Expected no errors for host={host!r}"
+
+
+def test_plug_host_invalid_format_detected():
+    for host in ("192.168.1 .10", "my plug", "host@local", "plug!", "192.168.1."):
+        raw = {"plants": [], "smart_plugs": [_base_plug(host=host)]}
+        errors = validate_config(raw)
+        assert any("host" in e for e in errors), f"Expected error for host={host!r}"
