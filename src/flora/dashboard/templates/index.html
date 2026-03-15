@@ -199,7 +199,14 @@
                 {{ p.config.species }}
             </div>
         </div>
-        <span class="badge badge-{{ p.status }}">{{ p.status }}</span>
+        <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+            <span class="badge badge-{{ p.status }}">{{ p.status }}</span>
+            {% if p.reading_age_hours is none %}
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);background:rgba(255,186,74,0.1);border:1px solid rgba(255,186,74,0.25);border-radius:4px;padding:2px 6px;">No data</span>
+            {% elif p.reading_age_hours > 2 %}
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);background:rgba(255,186,74,0.1);border:1px solid rgba(255,186,74,0.25);border-radius:4px;padding:2px 6px;">Stale ({{ "%.0f"|format(p.reading_age_hours) }}h)</span>
+            {% endif %}
+        </div>
     </div>
 
     <!-- Moisture ring + stats -->
