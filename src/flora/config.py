@@ -24,6 +24,7 @@ class PlantConfig:
     # Optional deterministic auto-water rule (no Claude API needed)
     auto_water_if_below: int | None = None   # moisture % threshold
     auto_water_duration_seconds: int = 8     # pump seconds (clamped 5-30)
+    auto_water_min_interval_minutes: int = 15  # minimum minutes between auto-water firings
     # Camera assignment (index into Picamera2 camera list; None = default 0)
     camera_index: int | None = None
 
