@@ -234,6 +234,12 @@ def validate_config(raw: dict) -> list[str]:
 
         alias = sp.get("alias")
         if alias is not None:
+            if not alias:
+                errors.append(f"{label}: alias must not be empty")
+            elif not _NAME_RE.match(alias):
+                errors.append(
+                    f"{label}: alias must contain only letters, digits, underscores, or hyphens (got {alias!r})"
+                )
             if alias in seen_plug_aliases:
                 errors.append(f"{label}: duplicate alias '{alias}'")
             else:
