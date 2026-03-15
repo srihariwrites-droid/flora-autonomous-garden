@@ -236,3 +236,27 @@ def test_agent_loop_interval_negative_detected():
 def test_agent_loop_interval_one_passes():
     raw = {"app": {"agent_loop_interval": 1}, "plants": []}
     assert validate_config(raw) == []
+
+
+def test_dashboard_port_zero_detected():
+    raw = {"app": {"dashboard_port": 0}, "plants": []}
+    errors = validate_config(raw)
+    assert any("dashboard_port" in e for e in errors)
+
+
+def test_dashboard_port_negative_detected():
+    raw = {"app": {"dashboard_port": -1}, "plants": []}
+    errors = validate_config(raw)
+    assert any("dashboard_port" in e for e in errors)
+
+
+def test_dashboard_port_above_max_detected():
+    raw = {"app": {"dashboard_port": 65536}, "plants": []}
+    errors = validate_config(raw)
+    assert any("dashboard_port" in e for e in errors)
+
+
+def test_dashboard_port_valid_boundaries_pass():
+    for port in (1, 8000, 65535):
+        raw = {"app": {"dashboard_port": port}, "plants": []}
+        assert validate_config(raw) == [], f"Expected no errors for port={port}"

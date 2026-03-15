@@ -68,6 +68,10 @@ def validate_config(raw: dict) -> list[str]:
         if val is not None and not (val >= 1):
             errors.append(f"[app] {field_name} must be >= 1 (got {val!r})")
 
+    port = app.get("dashboard_port")
+    if port is not None and not (1 <= port <= 65535):
+        errors.append(f"[app] dashboard_port must be 1-65535 (got {port!r})")
+
     plants = raw.get("plants", [])
 
     seen_names: set[str] = set()
