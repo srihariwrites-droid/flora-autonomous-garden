@@ -330,3 +330,17 @@ def test_auto_water_if_below_valid_boundaries_pass():
 def test_auto_water_if_below_absent_passes():
     raw = {"plants": [_base_plant()]}
     assert validate_config(raw) == []
+
+
+# --- species validation (issue #71) ---
+
+def test_species_unknown_value_detected():
+    raw = {"plants": [_base_plant(species="tomato")]}
+    errors = validate_config(raw)
+    assert any("species" in e for e in errors)
+
+
+def test_species_all_known_values_pass():
+    for species in ("basil", "parsley", "mint", "chives", "coriander"):
+        raw = {"plants": [_base_plant(species=species)]}
+        assert validate_config(raw) == [], f"Expected no errors for species={species!r}"
