@@ -431,3 +431,19 @@ def test_telegram_both_empty_passes():
 def test_telegram_section_absent_passes():
     raw = {"plants": []}
     assert validate_config(raw) == []
+
+
+def test_anthropic_api_key_empty_detected():
+    raw = {"plants": [], "anthropic": {"api_key": ""}}
+    errors = validate_config(raw)
+    assert any("api_key" in e for e in errors)
+
+
+def test_anthropic_api_key_non_empty_passes():
+    raw = {"plants": [], "anthropic": {"api_key": "sk-test-key"}}
+    assert validate_config(raw) == []
+
+
+def test_anthropic_section_absent_passes():
+    raw = {"plants": []}
+    assert validate_config(raw) == []
