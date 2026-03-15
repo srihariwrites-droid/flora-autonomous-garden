@@ -291,3 +291,38 @@ def test_load_config_raises_when_agent_loop_interval_exceeds_max(tmp_path: Path)
     toml = "[anthropic]\napi_key = \"sk-fake\"\n[app]\nagent_loop_interval = 99999\n"
     with pytest.raises(ValueError, match="flora.toml validation failed"):
         load_config(_write(tmp_path, toml))
+
+
+# ---------------------------------------------------------------------------
+# 12. append_plant_to_toml round-trip (issue #125)
+# ---------------------------------------------------------------------------
+
+def test_append_plant_to_toml_round_trip(tmp_path: Path) -> None:
+    """append_plant_to_toml output is parseable by load_config with correct values."""
+    from flora.config import append_plant_to_toml
+
+    toml_path = tmp_path / "flora.toml"
+    toml_path.write_text(
+        "[anthropic]\napi_key = \"sk-ant-xxxxxxxxxxxxxxxxxxxx\"\n",
+        encoding="utf-8",
+    )
+
+    plant_data = {
+        "name": "basil",
+        "species": "basil",
+        "sensor_mac": "AA:BB:CC:DD:EE:01",
+        "pump_gpio": 17,
+        "moisture_target_min": 35,
+        "moisture_target_max": 65,
+    }
+    append_plant_to_toml(toml_path, plant_data)
+
+    cfg = load_config(toml_path)
+    assert len(cfg.plants) == 1
+    basil = cfg.plant_by_name("basil")
+    assert basil is not None
+    assert basil.species == "basil"
+    assert basil.sensor_mac == "AA:BB:CC:DD:EE:01"
+    assert basil.pump_gpio == 17
+    assert basil.moisture_target_min == 35
+    assert basil.moisture_target_max == 65
