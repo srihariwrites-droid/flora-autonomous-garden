@@ -255,7 +255,9 @@
     <!-- Moisture sparkline -->
     <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
         <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.4rem;">7-day moisture</div>
-        <canvas id="chart-{{ p.config.name }}" height="48" style="width:100%; display:block;"></canvas>
+        <div style="position: relative; height: 48px; overflow: hidden;">
+            <canvas id="chart-{{ p.config.name }}" style="display:block;"></canvas>
+        </div>
         <div id="chart-{{ p.config.name }}-empty" style="display:none; font-size:0.72rem; color:var(--text-dim); padding: 0.5rem 0;">No data yet</div>
     </div>
 
@@ -302,6 +304,7 @@
                         animation: false,
                         responsive: true,
                         maintainAspectRatio: false,
+                        resizeDelay: 0,
                         plugins: { legend: { display: false }, tooltip: { enabled: false } },
                         scales: {
                             x: { display: false },
