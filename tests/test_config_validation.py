@@ -749,3 +749,25 @@ def test_telegram_chat_id_non_numeric_detected():
     raw = {"telegram": {"token": "123456789:ABCdef", "chat_id": "my_group"}}
     errors = validate_config(raw)
     assert any("chat_id" in e for e in errors)
+
+
+def test_sensor_poll_interval_max_boundary_passes():
+    raw = {"app": {"sensor_poll_interval": 86400}}
+    assert validate_config(raw) == []
+
+
+def test_sensor_poll_interval_above_max_detected():
+    raw = {"app": {"sensor_poll_interval": 86401}}
+    errors = validate_config(raw)
+    assert any("sensor_poll_interval" in e for e in errors)
+
+
+def test_agent_loop_interval_max_boundary_passes():
+    raw = {"app": {"agent_loop_interval": 86400}}
+    assert validate_config(raw) == []
+
+
+def test_agent_loop_interval_above_max_detected():
+    raw = {"app": {"agent_loop_interval": 86401}}
+    errors = validate_config(raw)
+    assert any("agent_loop_interval" in e for e in errors)
