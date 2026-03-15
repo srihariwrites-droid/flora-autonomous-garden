@@ -12,6 +12,13 @@ from pathlib import Path
 
 _MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 _KNOWN_SPECIES = {"basil", "parsley", "mint", "chives", "coriander"}
+_HOST_RE = re.compile(
+    r"^(?:"
+    r"(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)"
+    r"|"
+    r"[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*"
+    r")$"
+)
 
 
 @dataclass(frozen=True)
@@ -227,6 +234,10 @@ def validate_config(raw: dict) -> list[str]:
         if host is not None and not host:
             errors.append(f"{label}: host must not be empty")
         elif host is not None:
+            if not _HOST_RE.match(host):
+                errors.append(
+                    f"{label}: host must be a valid IPv4 address or hostname (got {host!r})"
+                )
             if host in seen_plug_hosts:
                 errors.append(f"{label}: duplicate host '{host}'")
             else:
