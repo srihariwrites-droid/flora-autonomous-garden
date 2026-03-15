@@ -185,3 +185,20 @@ def test_moisture_target_valid_boundaries_pass():
     for mn, mx in ((0, 1), (0, 100), (50, 100)):
         raw = {"plants": [_base_plant(moisture_target_min=mn, moisture_target_max=mx)]}
         assert validate_config(raw) == [], f"Expected no errors for min={mn}, max={mx}"
+
+
+def test_auto_water_min_interval_zero_detected():
+    raw = {"plants": [_base_plant(auto_water_min_interval_minutes=0)]}
+    errors = validate_config(raw)
+    assert any("auto_water_min_interval_minutes" in e for e in errors)
+
+
+def test_auto_water_min_interval_negative_detected():
+    raw = {"plants": [_base_plant(auto_water_min_interval_minutes=-5)]}
+    errors = validate_config(raw)
+    assert any("auto_water_min_interval_minutes" in e for e in errors)
+
+
+def test_auto_water_min_interval_one_passes():
+    raw = {"plants": [_base_plant(auto_water_min_interval_minutes=1)]}
+    assert validate_config(raw) == []
