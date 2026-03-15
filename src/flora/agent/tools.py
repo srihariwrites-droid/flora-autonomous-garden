@@ -92,6 +92,17 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "get_ambient_reading",
+        "description": "Query the latest ambient room conditions (temperature, humidity, light lux). Call this before making decisions about light schedules or when assessing whether room conditions are affecting plant health.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "hours": {"type": "integer", "description": "Number of hours to average (1-48). Default 1 returns only the latest reading.", "default": 1, "minimum": 1, "maximum": 48},
+            },
+            "required": [],
+        },
+    },
+    {
         "name": "get_sensor_history",
         "description": "Query sensor history for a plant. Always call this before watering.",
         "input_schema": {
@@ -128,6 +139,7 @@ class ToolExecutor:
             "update_plant_journal": self._update_plant_journal,
             "escalate_to_human": self._escalate_to_human,
             "get_sensor_history": self._get_sensor_history,
+            "get_ambient_reading": self._get_ambient_reading,
         }
         handler = handlers.get(tool_name)
         if handler is None:
@@ -297,3 +309,37 @@ class ToolExecutor:
         if len(readings) > 20:
             lines.append(f"  ... ({len(readings) - 20} more readings)")
         return "\n".join(lines)
+
+    async def _get_ambient_reading(self, inp: dict[str, Any]) -> str:
+        hours: int = max(1, min(48, int(inp.get("hours", 1))))
+
+        if hours == 1:
+            reading = await self._db.get_latest_ambient()
+            if reading is None:
+                return "No ambient reading available."
+            ts = reading.timestamp.strftime("%Y-%m-%d %H:%M")
+            return (
+                f"Ambient (latest, {ts}): "
+                f"temp={reading.temperature}°C, "
+                f"humidity={reading.humidity}%RH, "
+                f"light={reading.light_lux}lux"
+            )
+
+        readings = await self._db.get_ambient_readings(hours)
+        if not readings:
+            return f"No ambient readings in the last {hours} hours."
+
+        temps = [r.temperature for r in readings if r.temperature is not None]
+        humids = [r.humidity for r in readings if r.humidity is not None]
+        luxes = [r.light_lux for r in readings if r.light_lux is not None]
+
+        avg_temp = round(sum(temps) / len(temps), 1) if temps else None
+        avg_humid = round(sum(humids) / len(humids), 1) if humids else None
+        avg_lux = round(sum(luxes) / len(luxes), 1) if luxes else None
+
+        return (
+            f"Ambient average over last {hours}h ({len(readings)} readings): "
+            f"temp={avg_temp}°C, "
+            f"humidity={avg_humid}%RH, "
+            f"light={avg_lux}lux"
+        )

@@ -13,7 +13,6 @@ from flora.sensors.sht31 import read_sht31
 from flora.sensors.bh1750 import read_bh1750
 from pathlib import Path
 
-from flora.actuators.smartplug import toggle_plug
 from flora.agent.loop import AgentLoop
 from flora.notifications import send_daily_summary
 from flora.sensors.camera import capture_photo
@@ -103,6 +102,8 @@ async def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
     Queries SQLite for any persisted plug schedules and re-registers their
     cron jobs so they survive a Pi reboot.
     """
+    from flora.actuators.smartplug import toggle_plug
+
     scheduler = AsyncIOScheduler()
 
     # Sensor poll: every 30 minutes (configurable)
@@ -155,15 +156,8 @@ async def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
     if plug is not None:
         saved = await db.get_plug_schedule(plug.alias)
         if saved is not None and saved.enabled:
-            try:
-                on_h, on_m = (int(x) for x in saved.on_time.split(":"))
-                off_h, off_m = (int(x) for x in saved.off_time.split(":"))
-            except (ValueError, AttributeError):
-                logger.warning(
-                    "Skipping corrupt grow_light schedule (on=%r off=%r)",
-                    saved.on_time, saved.off_time,
-                )
-                return scheduler
+            on_h, on_m = (int(x) for x in saved.on_time.split(":"))
+            off_h, off_m = (int(x) for x in saved.off_time.split(":"))
             scheduler.add_job(
                 toggle_plug,
                 trigger="cron",
