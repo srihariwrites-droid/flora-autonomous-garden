@@ -174,3 +174,34 @@ def test_custom_dashboard_port(tmp_path: Path) -> None:
 def test_default_dashboard_port(tmp_path: Path) -> None:
     cfg = load_config(_write(tmp_path, _MINIMAL_TOML))
     assert cfg.dashboard_port == 8000
+
+
+# ---------------------------------------------------------------------------
+# 9. auto_water_min_interval_minutes loaded from TOML
+# ---------------------------------------------------------------------------
+
+_TOML_WITH_INTERVAL = """
+[anthropic]
+api_key = "sk-fake-key"
+
+[[plants]]
+name = "basil"
+species = "basil"
+sensor_mac = "AA:BB:CC:DD:EE:01"
+pump_gpio = 17
+auto_water_min_interval_minutes = 30
+"""
+
+
+def test_custom_auto_water_min_interval_minutes(tmp_path: Path) -> None:
+    cfg = load_config(_write(tmp_path, _TOML_WITH_INTERVAL))
+    basil = cfg.plant_by_name("basil")
+    assert basil is not None
+    assert basil.auto_water_min_interval_minutes == 30
+
+
+def test_default_auto_water_min_interval_minutes(tmp_path: Path) -> None:
+    cfg = load_config(_write(tmp_path, _FULL_TOML))
+    basil = cfg.plant_by_name("basil")
+    assert basil is not None
+    assert basil.auto_water_min_interval_minutes == 15
