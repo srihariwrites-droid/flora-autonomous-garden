@@ -1,4 +1,3 @@
-"""Tests for sustained critical moisture alert watcher (issue #43)."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta
