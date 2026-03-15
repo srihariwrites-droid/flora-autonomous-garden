@@ -115,6 +115,8 @@ async def test_auto_water_not_triggered_when_threshold_is_none():
     db.insert_sensor_reading = AsyncMock()
     db.log_action = AsyncMock()
     db.insert_ambient_reading = AsyncMock()
+    db.count_recent_same_action = AsyncMock(return_value=0)
+    db.get_sensor_history = AsyncMock(return_value=[])  # critical alert watcher
 
     miflora_reading = _make_miflora_reading(moisture=5.0)
 
