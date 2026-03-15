@@ -85,6 +85,11 @@ def validate_config(raw: dict) -> list[str]:
             "[telegram] token and chat_id must both be set or both be empty"
         )
 
+    anthropic = raw.get("anthropic", {})
+    api_key = anthropic.get("api_key")
+    if api_key is not None and not api_key:
+        errors.append("[anthropic] api_key must not be empty")
+
     plants = raw.get("plants", [])
 
     seen_names: set[str] = set()
