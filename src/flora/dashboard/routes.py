@@ -118,7 +118,6 @@ def create_router(
 
     @router.get("/api/plants")
     async def plants_api() -> JSONResponse:
-        """Snapshot of all plants with their latest sensor reading and status."""
         result = []
         for plant in config.plants:
             reading = await db.get_latest_sensor_reading(plant.name)
