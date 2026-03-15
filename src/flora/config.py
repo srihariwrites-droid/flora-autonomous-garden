@@ -146,6 +146,11 @@ def validate_config(raw: dict) -> list[str]:
         host = sp.get("host")
         if host is not None and not host:
             errors.append(f"{label}: host must not be empty")
+        role = sp.get("role")
+        if role is not None and role not in ("grow_light", "humidifier", "fan"):
+            errors.append(
+                f"{label}: role must be one of grow_light, humidifier, fan (got {role!r})"
+            )
 
     return errors
 
