@@ -637,3 +637,28 @@ def test_plant_name_empty_detected():
     raw = {"plants": [_base_plant(name="")]}
     errors = validate_config(raw)
     assert any("name" in e for e in errors)
+
+
+def test_plug_alias_valid_chars_pass():
+    for alias in ("grow-light", "humidifier_1", "fan", "MyFan"):
+        raw = {"plants": [], "smart_plugs": [_base_plug(alias=alias)]}
+        assert validate_config(raw) == [], f"Expected no errors for alias={alias!r}"
+
+
+def test_plug_alias_with_space_detected():
+    raw = {"plants": [], "smart_plugs": [_base_plug(alias="grow light")]}
+    errors = validate_config(raw)
+    assert any("alias" in e for e in errors)
+
+
+def test_plug_alias_with_special_char_detected():
+    for alias in ("fan!", "plug@home", "light/1"):
+        raw = {"plants": [], "smart_plugs": [_base_plug(alias=alias)]}
+        errors = validate_config(raw)
+        assert any("alias" in e for e in errors), f"Expected error for alias={alias!r}"
+
+
+def test_plug_alias_empty_detected():
+    raw = {"plants": [], "smart_plugs": [_base_plug(alias="")]}
+    errors = validate_config(raw)
+    assert any("alias" in e for e in errors)
