@@ -10,7 +10,7 @@ from flora.config import AppConfig, PlantConfig, SmartPlugConfig, load_config
 
 _MINIMAL_TOML = """
 [anthropic]
-api_key = "sk-fake-key"
+api_key = "sk-ant-xxxxxxxxxxxxxxxxxxxx"
 
 [[plants]]
 name = "basil"
@@ -27,7 +27,7 @@ sensor_poll_interval = 600
 agent_loop_interval = 3600
 
 [anthropic]
-api_key = "sk-fake-key"
+api_key = "sk-ant-xxxxxxxxxxxxxxxxxxxx"
 model = "claude-test-model"
 
 [telegram]
@@ -71,7 +71,7 @@ def test_load_full_config(tmp_path: Path) -> None:
     assert isinstance(cfg, AppConfig)
     assert len(cfg.plants) == 2
     assert len(cfg.smart_plugs) == 1
-    assert cfg.anthropic_api_key == "sk-fake-key"
+    assert cfg.anthropic_api_key == "sk-ant-xxxxxxxxxxxxxxxxxxxx"
     assert cfg.anthropic_model == "claude-test-model"
     assert cfg.telegram_token == "123456789:ABCdefGHIjklMNO"
     assert cfg.telegram_chat_id == "12345"
@@ -188,7 +188,7 @@ def test_default_dashboard_port(tmp_path: Path) -> None:
 
 _TOML_WITH_INTERVAL = """
 [anthropic]
-api_key = "sk-fake-key"
+api_key = "sk-ant-xxxxxxxxxxxxxxxxxxxx"
 
 [[plants]]
 name = "basil"
@@ -225,7 +225,7 @@ sensor_poll_interval = 1800
 agent_loop_interval = 7200
 
 [anthropic]
-api_key = "sk-fake-key"
+api_key = "sk-ant-xxxxxxxxxxxxxxxxxxxx"
 model = "claude-sonnet-4-6"
 
 [telegram]
