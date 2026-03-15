@@ -447,3 +447,9 @@ def test_anthropic_api_key_non_empty_passes():
 def test_anthropic_section_absent_passes():
     raw = {"plants": []}
     assert validate_config(raw) == []
+
+
+def test_pump_gpio_float_detected():
+    raw = {"plants": [_base_plant(pump_gpio=17.0)]}
+    errors = validate_config(raw)
+    assert any("pump_gpio" in e for e in errors)
