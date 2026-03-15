@@ -51,6 +51,22 @@ class AppConfig:
         return next((p for p in self.smart_plugs if p.role == role), None)
 
 
+def append_plant_to_toml(path: str | Path, plant: dict) -> None:
+    """Append a new [[plants]] entry to flora.toml, preserving all existing content."""
+    config_path = Path(path)
+    existing = config_path.read_text(encoding="utf-8") if config_path.exists() else ""
+
+    lines = ["\n[[plants]]"]
+    for key, value in plant.items():
+        if isinstance(value, str):
+            lines.append(f'{key} = "{value}"')
+        elif value is not None:
+            lines.append(f"{key} = {value}")
+
+    with open(config_path, "a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
 def load_config(path: str | Path = "flora.toml") -> AppConfig:
     """Load and validate flora.toml, returning a frozen AppConfig."""
     config_path = Path(path)

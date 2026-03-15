@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="fade-up" style="margin-bottom: 1.5rem;">
+    <a href="/" style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">
+        ← All plants
+    </a>
+</div>
+
+<div class="page-header fade-up-1">
+    <div class="page-eyebrow">New Plant</div>
+    <h1 class="page-title"><em>Commission</em> a plant</h1>
+</div>
+
+<!-- Step indicators -->
+<div class="fade-up-2" style="display: flex; gap: 0; margin-bottom: 2.5rem; border: 1px solid var(--border); border-radius: 10px; overflow: hidden;">
+    {% for label in ["1. Sensor", "2. Configure", "3. Test pump", "4. Save"] %}
+    <div id="step-indicator-{{ loop.index }}" style="flex: 1; padding: 0.6rem 0.5rem; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: {% if loop.first %}var(--accent){% else %}var(--text-dim){% endif %}; background: {% if loop.first %}rgba(0,224,122,0.06){% else %}transparent{% endif %}; border-right: {% if not loop.last %}1px solid var(--border){% else %}none{% endif %}; transition: all 0.3s;">
+        {{ label }}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Step 1: Scan -->
+<div id="step-1" class="card fade-up-3" style="margin-bottom: 1.25rem;">
+    <div class="card-label">Step 1 — Find your Mi Flora sensor</div>
+    <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Power on the Mi Flora sensor and hold it within 1 metre of the Pi, then click Scan.
+        On dev machines (non-Pi) enter the MAC manually.
+    </p>
+    <div style="display: flex; gap: 0.75rem; align-items: flex-start; flex-wrap: wrap;">
+        <button type="button" class="btn btn-primary" onclick="scanSensors()" id="scanBtn">
+            Scan for sensors
+        </button>
+        <div id="scan-result" style="flex: 1; min-width: 200px;"></div>
+    </div>
+    <div style="margin-top: 1.25rem;">
+        <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Sensor MAC address</label>
+        <input type="text" id="sensor_mac" name="sensor_mac" placeholder="AA:BB:CC:DD:EE:FF"
+               style="width: 100%; max-width: 260px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;"
+               oninput="this.value = this.value.toUpperCase()">
+    </div>
+    <div style="margin-top: 1.25rem; text-align: right;">
+        <button type="button" class="btn btn-primary" onclick="goToStep(2)">Next →</button>
+    </div>
+</div>
+
+<!-- Step 2: Configure -->
+<div id="step-2" class="card fade-up-3" style="margin-bottom: 1.25rem; display: none;">
+    <div class="card-label">Step 2 — Plant details</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+
+        <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Plant name</label>
+            <input type="text" id="name" placeholder="basil-1" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
+            <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 0.3rem;">Unique identifier, no spaces</div>
+        </div>
+
+        <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Species</label>
+            <select id="species" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
+                <option value="basil">Basil</option>
+                <option value="mint">Mint</option>
+                <option value="parsley">Parsley</option>
+                <option value="chives">Chives</option>
+                <option value="coriander">Coriander</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+
+        <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Pump GPIO pin</label>
+            <select id="pump_gpio" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
+                {% for pin in free_gpio %}
+                <option value="{{ pin }}">GPIO {{ pin }}</option>
+                {% else %}
+                <option disabled>No free pins</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Moisture target min %</label>
+            <input type="number" id="moisture_min" value="40" min="0" max="100" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
+        </div>
+
+        <div>
+            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Moisture target max %</label>
+            <input type="number" id="moisture_max" value="70" min="0" max="100" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
+        </div>
+    </div>
+    <div style="display: flex; justify-content: space-between;">
+        <button type="button" class="btn" onclick="goToStep(1)">← Back</button>
+        <button type="button" class="btn btn-primary" onclick="goToStep(3)">Next →</button>
+    </div>
+</div>
+
+<!-- Step 3: Test pump -->
+<div id="step-3" class="card fade-up-3" style="margin-bottom: 1.25rem; display: none;">
+    <div class="card-label">Step 3 — Test the pump</div>
+    <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Ensure the pump tube is in a cup of water before testing. This fires the relay for 3 seconds.
+    </p>
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        <button type="button" class="btn btn-primary" onclick="testPump()">Fire pump (3s)</button>
+        <span id="pump-result" style="font-size: 0.8rem;"></span>
+    </div>
+    <div style="margin-top: 1.25rem; display: flex; justify-content: space-between;">
+        <button type="button" class="btn" onclick="goToStep(2)">← Back</button>
+        <button type="button" class="btn btn-primary" onclick="goToStep(4)">Next →</button>
+    </div>
+</div>
+
+<!-- Step 4: Confirm & save -->
+<div id="step-4" style="display: none;">
+    <div class="card fade-up-3" style="margin-bottom: 1.25rem;">
+        <div class="card-label">Step 4 — Confirm &amp; save</div>
+        <div id="summary" style="margin-bottom: 1.5rem;"></div>
+        <div style="background: rgba(255,186,74,0.06); border: 1px solid rgba(255,186,74,0.18); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.78rem; color: var(--amber); margin-bottom: 1.25rem;">
+            After saving, restart Flora to activate the new plant.
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <button type="button" class="btn" onclick="goToStep(3)">← Back</button>
+            <form method="post" action="/plants/new" id="saveForm" style="display: inline;">
+                <input type="hidden" name="name" id="f_name">
+                <input type="hidden" name="species" id="f_species">
+                <input type="hidden" name="sensor_mac" id="f_mac">
+                <input type="hidden" name="pump_gpio" id="f_gpio">
+                <input type="hidden" name="moisture_target_min" id="f_min">
+                <input type="hidden" name="moisture_target_max" id="f_max">
+                <button type="submit" class="btn btn-primary">Save plant</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function goToStep(n) {
+    [1,2,3,4].forEach(function(i) {
+        var el = document.getElementById('step-' + i);
+        if (el) el.style.display = i === n ? '' : 'none';
+        var ind = document.getElementById('step-indicator-' + i);
+        if (ind) {
+            ind.style.color = i === n ? 'var(--accent)' : 'var(--text-dim)';
+            ind.style.background = i === n ? 'rgba(0,224,122,0.06)' : 'transparent';
+        }
+    });
+    if (n === 4) buildSummary();
+}
+
+async function scanSensors() {
+    var btn = document.getElementById('scanBtn');
+    var result = document.getElementById('scan-result');
+    btn.textContent = 'Scanning\u2026';
+    btn.disabled = true;
+    result.textContent = '';
+    try {
+        var resp = await fetch('/api/commissioning/scan');
+        var data = await resp.json();
+        if (data.macs && data.macs.length > 0) {
+            data.macs.forEach(function(mac) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'btn';
+                b.style.cssText = 'font-size:0.72rem;margin:0.25rem;';
+                b.textContent = mac;
+                b.addEventListener('click', function() {
+                    document.getElementById('sensor_mac').value = mac;
+                });
+                result.appendChild(b);
+            });
+        } else {
+            var hint = document.createElement('span');
+            hint.style.cssText = 'font-size:0.75rem;color:var(--text-dim);';
+            hint.textContent = data.hint || 'No sensors found \u2014 enter MAC manually';
+            result.appendChild(hint);
+        }
+    } catch(e) {
+        var err = document.createElement('span');
+        err.style.cssText = 'font-size:0.75rem;color:var(--red);';
+        err.textContent = 'Scan failed \u2014 enter MAC manually';
+        result.appendChild(err);
+    }
+    btn.textContent = 'Scan for sensors';
+    btn.disabled = false;
+}
+
+async function testPump() {
+    var gpio = document.getElementById('pump_gpio').value;
+    var result = document.getElementById('pump-result');
+    result.style.color = 'var(--text-dim)';
+    result.textContent = 'Firing\u2026';
+    try {
+        var fd = new FormData();
+        fd.append('gpio', gpio);
+        fd.append('duration', '3');
+        var resp = await fetch('/api/commissioning/test-pump', { method: 'POST', body: fd });
+        var data = await resp.json();
+        result.style.color = data.ok ? 'var(--accent)' : 'var(--red)';
+        result.textContent = data.ok ? 'Pump fired OK' : 'Pump failed \u2014 check wiring';
+    } catch(e) {
+        result.style.color = 'var(--red)';
+        result.textContent = 'Request failed';
+    }
+}
+
+function makeRow(label, value) {
+    var row = document.createElement('div');
+    row.className = 'stat-row';
+    var lbl = document.createElement('span');
+    lbl.className = 'stat-label';
+    lbl.textContent = label;
+    var val = document.createElement('span');
+    val.className = 'stat-value';
+    val.textContent = value;
+    row.appendChild(lbl);
+    row.appendChild(val);
+    return row;
+}
+
+function buildSummary() {
+    var name    = document.getElementById('name').value;
+    var species = document.getElementById('species').value;
+    var mac     = document.getElementById('sensor_mac').value;
+    var gpio    = document.getElementById('pump_gpio').value;
+    var min     = document.getElementById('moisture_min').value;
+    var max     = document.getElementById('moisture_max').value;
+
+    var summary = document.getElementById('summary');
+    summary.textContent = '';
+    summary.appendChild(makeRow('Name', name));
+    summary.appendChild(makeRow('Species', species));
+    summary.appendChild(makeRow('Sensor MAC', mac));
+    summary.appendChild(makeRow('Pump GPIO', 'GPIO ' + gpio));
+    summary.appendChild(makeRow('Moisture target', min + '% \u2013 ' + max + '%'));
+
+    document.getElementById('f_name').value    = name;
+    document.getElementById('f_species').value = species;
+    document.getElementById('f_mac').value     = mac;
+    document.getElementById('f_gpio').value    = gpio;
+    document.getElementById('f_min').value     = min;
+    document.getElementById('f_max').value     = max;
+}
+</script>
+
+{% endblock %}
