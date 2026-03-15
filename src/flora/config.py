@@ -12,6 +12,7 @@ from pathlib import Path
 
 _MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 _KNOWN_SPECIES = {"basil", "parsley", "mint", "chives", "coriander"}
+# IPv4 (octet-range clamped 0-255) or RFC-1123 hostname labels
 _HOST_RE = re.compile(
     r"^(?:"
     r"(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)"
