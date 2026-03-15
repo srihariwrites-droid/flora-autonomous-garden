@@ -116,6 +116,27 @@ def create_router(
             f'<div class="alert alert-info">Watered {name} for {duration}s: {status}</div>'
         )
 
+    @router.get("/api/plants")
+    async def plants_api() -> JSONResponse:
+        """Snapshot of all plants with their latest sensor reading and status."""
+        result = []
+        for plant in config.plants:
+            reading = await db.get_latest_sensor_reading(plant.name)
+            age_hours = _reading_age_hours(reading)
+            result.append({
+                "name": plant.name,
+                "species": plant.species,
+                "status": _status(reading.moisture if reading else None, plant.moisture_target_min, plant.moisture_target_max),
+                "moisture": reading.moisture if reading else None,
+                "temperature": reading.temperature if reading else None,
+                "light": reading.light if reading else None,
+                "battery": reading.battery if reading else None,
+                "reading_age_hours": age_hours,
+                "moisture_target_min": plant.moisture_target_min,
+                "moisture_target_max": plant.moisture_target_max,
+            })
+        return JSONResponse(result)
+
     @router.get("/api/health")
     async def health_api() -> JSONResponse:
         """System health check: db connectivity and freshness of sensor data."""
