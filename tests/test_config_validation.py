@@ -421,7 +421,7 @@ def test_telegram_chat_id_without_token_detected():
 
 
 def test_telegram_both_set_passes():
-    raw = {"plants": [], "telegram": {"token": "abc123", "chat_id": "99999"}}
+    raw = {"plants": [], "telegram": {"token": "123456789:ABCdef", "chat_id": "99999"}}
     assert validate_config(raw) == []
 
 
@@ -721,3 +721,31 @@ def test_auto_water_if_below_absent_no_cross_error():
 def test_moisture_target_min_absent_no_cross_error():
     raw = {"plants": [_base_plant(auto_water_if_below=30)]}
     assert validate_config(raw) == []
+
+
+def test_telegram_valid_token_and_chat_id_pass():
+    raw = {"telegram": {"token": "123456789:ABCdef-ghiJKL_mnoPQR", "chat_id": "987654321"}}
+    assert validate_config(raw) == []
+
+
+def test_telegram_group_chat_id_passes():
+    raw = {"telegram": {"token": "123456789:ABCdef", "chat_id": "-100123456789"}}
+    assert validate_config(raw) == []
+
+
+def test_telegram_token_missing_colon_detected():
+    raw = {"telegram": {"token": "123456789ABCdef", "chat_id": "123"}}
+    errors = validate_config(raw)
+    assert any("token" in e for e in errors)
+
+
+def test_telegram_token_non_numeric_id_detected():
+    raw = {"telegram": {"token": "abc:ABCdef", "chat_id": "123"}}
+    errors = validate_config(raw)
+    assert any("token" in e for e in errors)
+
+
+def test_telegram_chat_id_non_numeric_detected():
+    raw = {"telegram": {"token": "123456789:ABCdef", "chat_id": "my_group"}}
+    errors = validate_config(raw)
+    assert any("chat_id" in e for e in errors)
