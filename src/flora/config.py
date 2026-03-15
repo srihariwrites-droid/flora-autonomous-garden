@@ -138,6 +138,12 @@ def validate_config(raw: dict) -> list[str]:
                 f"{label}: auto_water_min_interval_minutes must be >= 1 (got {interval!r})"
             )
 
+        threshold = p.get("auto_water_if_below")
+        if threshold is not None and not (0 <= threshold <= 100):
+            errors.append(
+                f"{label}: auto_water_if_below must be 0-100 (got {threshold!r})"
+            )
+
     for i, sp in enumerate(raw.get("smart_plugs", [])):
         label = f"Smart plug #{i + 1}"
         for field_name in ("alias", "host", "role"):
