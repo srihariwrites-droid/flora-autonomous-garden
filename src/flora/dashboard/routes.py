@@ -11,6 +11,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
+from flora.analytics import estimate_hours_to_threshold
 from flora.config import AppConfig, append_plant_to_toml
 from flora.db import Database, SensorReading
 
@@ -77,6 +78,8 @@ def create_router(
         reading = await db.get_latest_sensor_reading(name)
         journal = await db.get_journal(name, limit=30)
         actions = await db.get_recent_actions(limit=20, plant_name=name)
+        recent_readings = await db.get_sensor_history(name, hours=6, limit=50)
+        hours_to_water = estimate_hours_to_threshold(recent_readings, plant.moisture_target_min)
         return templates.TemplateResponse(
             request,
             "plant.html",
@@ -87,6 +90,7 @@ def create_router(
                 "actions": actions,
                 "status": _status(reading.moisture if reading else None, plant.moisture_target_min, plant.moisture_target_max),
                 "reading_age_hours": _reading_age_hours(reading),
+                "hours_to_water": hours_to_water,
             },
         )
 

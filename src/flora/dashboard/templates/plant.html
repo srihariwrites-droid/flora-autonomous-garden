@@ -18,6 +18,9 @@
         {% elif reading_age_hours > 2 %}
         <span style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);background:rgba(255,186,74,0.1);border:1px solid rgba(255,186,74,0.25);border-radius:4px;padding:3px 8px;">Stale ({{ "%.0f"|format(reading_age_hours) }}h)</span>
         {% endif %}
+        {% if hours_to_water is not none %}
+        <span style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);background:rgba(74,117,88,0.1);border:1px solid rgba(74,117,88,0.25);border-radius:4px;padding:3px 8px;">Est. water in ~{{ "%.0f"|format(hours_to_water) }}h</span>
+        {% endif %}
     </div>
     <div style="font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; font-style: italic; margin-top: 0.35rem;">
         {{ plant.species }} &nbsp;·&nbsp; target {{ plant.moisture_target_min }}–{{ plant.moisture_target_max }}%
