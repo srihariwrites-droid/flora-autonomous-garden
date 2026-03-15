@@ -106,6 +106,10 @@ def validate_config(raw: dict) -> list[str]:
     model = anthropic.get("model")
     if model is not None and not model:
         errors.append("[anthropic] model must not be empty")
+    elif model is not None and len(model) > 100:
+        errors.append(f"[anthropic] model must be <= 100 characters (got {len(model)})")
+    elif model is not None and any(c in model for c in (" ", "\t", "\n")):
+        errors.append(f"[anthropic] model must not contain whitespace (got {model!r})")
 
     plants = raw.get("plants", [])
 
