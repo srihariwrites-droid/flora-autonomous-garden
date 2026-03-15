@@ -97,7 +97,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "hours": {"type": "integer", "description": "If > 1, return the average over this many hours (1-48). Default 1 returns the single latest reading.", "default": 1, "minimum": 1, "maximum": 48},
+                "hours": {"type": "integer", "description": "Number of hours to average (1-48). Default 1 returns only the latest reading.", "default": 1, "minimum": 1, "maximum": 48},
             },
             "required": [],
         },
@@ -311,9 +311,9 @@ class ToolExecutor:
         return "\n".join(lines)
 
     async def _get_ambient_reading(self, inp: dict[str, Any]) -> str:
-        hours: int = int(inp.get("hours", 1))
+        hours: int = max(1, min(48, int(inp.get("hours", 1))))
 
-        if hours <= 1:
+        if hours == 1:
             reading = await self._db.get_latest_ambient()
             if reading is None:
                 return "No ambient reading available."
