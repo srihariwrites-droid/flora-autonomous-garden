@@ -12,6 +12,10 @@ from pathlib import Path
 
 _MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 _KNOWN_SPECIES = {"basil", "parsley", "mint", "chives", "coriander"}
+# Telegram bot token: <numeric_bot_id>:<alphanumeric_secret>
+_TG_TOKEN_RE = re.compile(r"^\d+:[A-Za-z0-9_-]+$")
+# Telegram chat_id: integer (positive for users/channels, negative for groups)
+_TG_CHAT_ID_RE = re.compile(r"^-?\d+$")
 # Safe characters for plant names used in dashboard URLs and log messages
 _NAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
 # IPv4 (octet-range clamped 0-255) or RFC-1123 hostname labels
@@ -97,6 +101,14 @@ def validate_config(raw: dict) -> list[str]:
     if bool(tg_token) != bool(tg_chat_id):
         errors.append(
             "[telegram] token and chat_id must both be set or both be empty"
+        )
+    if tg_token and not _TG_TOKEN_RE.match(tg_token):
+        errors.append(
+            f"[telegram] token must be in the format <bot_id>:<secret> (got {tg_token!r})"
+        )
+    if tg_chat_id and not _TG_CHAT_ID_RE.match(tg_chat_id):
+        errors.append(
+            f"[telegram] chat_id must be an integer (got {tg_chat_id!r})"
         )
 
     anthropic = raw.get("anthropic", {})
