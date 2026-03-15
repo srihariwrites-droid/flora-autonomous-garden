@@ -290,6 +290,12 @@ def test_smart_plug_unknown_role_detected():
     assert any("role must be one of" in e for e in errors)
 
 
+def test_smart_plug_empty_role_detected():
+    raw = {"plants": [], "smart_plugs": [_base_plug(role="")]}
+    errors = validate_config(raw)
+    assert any("role" in e for e in errors)
+
+
 def test_smart_plug_all_valid_roles_pass():
     for role in ("grow_light", "humidifier", "fan"):
         raw = {"plants": [], "smart_plugs": [_base_plug(role=role)]}
