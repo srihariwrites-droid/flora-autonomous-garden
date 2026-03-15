@@ -404,3 +404,30 @@ def test_notes_empty_passes():
 def test_notes_absent_passes():
     raw = {"plants": [_base_plant()]}
     assert validate_config(raw) == []
+
+
+def test_telegram_token_without_chat_id_detected():
+    raw = {"plants": [], "telegram": {"token": "abc123", "chat_id": ""}}
+    errors = validate_config(raw)
+    assert any("telegram" in e for e in errors)
+
+
+def test_telegram_chat_id_without_token_detected():
+    raw = {"plants": [], "telegram": {"token": "", "chat_id": "99999"}}
+    errors = validate_config(raw)
+    assert any("telegram" in e for e in errors)
+
+
+def test_telegram_both_set_passes():
+    raw = {"plants": [], "telegram": {"token": "abc123", "chat_id": "99999"}}
+    assert validate_config(raw) == []
+
+
+def test_telegram_both_empty_passes():
+    raw = {"plants": [], "telegram": {"token": "", "chat_id": ""}}
+    assert validate_config(raw) == []
+
+
+def test_telegram_section_absent_passes():
+    raw = {"plants": []}
+    assert validate_config(raw) == []
