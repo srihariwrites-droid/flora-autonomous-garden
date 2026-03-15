@@ -107,6 +107,12 @@ def validate_config(raw: dict) -> list[str]:
                 f"{label}: moisture_target_min ({mn}) must be less than moisture_target_max ({mx})"
             )
 
+        duration = p.get("auto_water_duration_seconds")
+        if duration is not None and not (1 <= duration <= 30):
+            errors.append(
+                f"{label}: auto_water_duration_seconds must be 1-30 (got {duration!r})"
+            )
+
     return errors
 
 

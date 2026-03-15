@@ -143,3 +143,21 @@ def test_load_config_raises_on_invalid(tmp_path):
     )
     with pytest.raises(ValueError, match="flora.toml validation failed"):
         load_config(toml)
+
+
+def test_auto_water_duration_too_low_detected():
+    raw = {"plants": [_base_plant(auto_water_duration_seconds=0)]}
+    errors = validate_config(raw)
+    assert any("auto_water_duration_seconds" in e for e in errors)
+
+
+def test_auto_water_duration_too_high_detected():
+    raw = {"plants": [_base_plant(auto_water_duration_seconds=31)]}
+    errors = validate_config(raw)
+    assert any("auto_water_duration_seconds" in e for e in errors)
+
+
+def test_auto_water_duration_valid_range_passes():
+    for val in (1, 15, 30):
+        raw = {"plants": [_base_plant(auto_water_duration_seconds=val)]}
+        assert validate_config(raw) == [], f"Expected no errors for duration={val}"
