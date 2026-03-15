@@ -13,6 +13,11 @@
     <div style="display: flex; align-items: baseline; gap: 1.25rem; flex-wrap: wrap;">
         <h1 class="page-title"><em>{{ plant.name }}</em></h1>
         <span class="badge badge-{{ status }}" style="font-size: 0.7rem; padding: 0.25rem 0.8rem;">{{ status }}</span>
+        {% if reading_age_hours is none %}
+        <span style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);background:rgba(255,186,74,0.1);border:1px solid rgba(255,186,74,0.25);border-radius:4px;padding:3px 8px;">No data</span>
+        {% elif reading_age_hours > 2 %}
+        <span style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);background:rgba(255,186,74,0.1);border:1px solid rgba(255,186,74,0.25);border-radius:4px;padding:3px 8px;">Stale ({{ "%.0f"|format(reading_age_hours) }}h)</span>
+        {% endif %}
     </div>
     <div style="font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; font-style: italic; margin-top: 0.35rem;">
         {{ plant.species }} &nbsp;·&nbsp; target {{ plant.moisture_target_min }}–{{ plant.moisture_target_max }}%

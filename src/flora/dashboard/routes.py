@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Stre
 from fastapi.templating import Jinja2Templates
 
 from flora.config import AppConfig, append_plant_to_toml
-from flora.db import Database
+from flora.db import Database, SensorReading
 
 # GPIO pins commonly available on Pi for relay use (BCM numbering)
 _CANDIDATE_GPIO_PINS = [4, 17, 18, 22, 23, 24, 25, 27]
@@ -34,6 +34,7 @@ def create_router(
                 "config": plant,
                 "reading": reading,
                 "status": _status(reading.moisture if reading else None, plant.moisture_target_min, plant.moisture_target_max),
+                "reading_age_hours": _reading_age_hours(reading),
             })
         ambient = await db.get_latest_ambient()
         actions = await db.get_recent_actions(limit=5)
@@ -85,6 +86,7 @@ def create_router(
                 "journal": journal,
                 "actions": actions,
                 "status": _status(reading.moisture if reading else None, plant.moisture_target_min, plant.moisture_target_max),
+                "reading_age_hours": _reading_age_hours(reading),
             },
         )
 
@@ -253,6 +255,14 @@ def _mock_moisture(species: str) -> float:
 
 def _mock_status(species: str) -> str:
     return _SPECIES_MOCK.get(species.lower(), _DEFAULT_MOCK)[1]
+
+
+def _reading_age_hours(reading: SensorReading | None) -> float | None:
+    """Return how many hours old a reading is, or None if no reading."""
+    if reading is None:
+        return None
+    delta = datetime.utcnow() - reading.timestamp
+    return delta.total_seconds() / 3600
 
 
 def _status(moisture: float | None, target_min: int, target_max: int) -> str:
