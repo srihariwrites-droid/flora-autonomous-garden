@@ -662,3 +662,31 @@ def test_plug_alias_empty_detected():
     raw = {"plants": [], "smart_plugs": [_base_plug(alias="")]}
     errors = validate_config(raw)
     assert any("alias" in e for e in errors)
+
+
+def test_model_valid_passes():
+    raw = {"anthropic": {"api_key": "sk-fake", "model": "claude-sonnet-4-6"}}
+    assert validate_config(raw) == []
+
+
+def test_model_too_long_detected():
+    raw = {"anthropic": {"api_key": "sk-fake", "model": "x" * 101}}
+    errors = validate_config(raw)
+    assert any("model" in e for e in errors)
+
+
+def test_model_with_space_detected():
+    raw = {"anthropic": {"api_key": "sk-fake", "model": "claude sonnet"}}
+    errors = validate_config(raw)
+    assert any("model" in e for e in errors)
+
+
+def test_model_with_newline_detected():
+    raw = {"anthropic": {"api_key": "sk-fake", "model": "claude\nsonnet"}}
+    errors = validate_config(raw)
+    assert any("model" in e for e in errors)
+
+
+def test_model_exactly_100_chars_passes():
+    raw = {"anthropic": {"api_key": "sk-fake", "model": "a" * 100}}
+    assert validate_config(raw) == []
