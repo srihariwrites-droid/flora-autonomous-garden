@@ -65,6 +65,7 @@ async def test_auto_water_triggers_when_below_threshold():
     db.insert_sensor_reading = AsyncMock()
     db.log_action = AsyncMock()
     db.insert_ambient_reading = AsyncMock()
+    db.count_recent_same_action = AsyncMock(return_value=0)  # watcher: no recent firings
 
     miflora_reading = _make_miflora_reading(moisture=18.0)
 
@@ -91,6 +92,7 @@ async def test_auto_water_not_triggered_when_above_threshold():
     db.insert_sensor_reading = AsyncMock()
     db.log_action = AsyncMock()
     db.insert_ambient_reading = AsyncMock()
+    db.count_recent_same_action = AsyncMock(return_value=0)  # watcher: no recent firings
 
     miflora_reading = _make_miflora_reading(moisture=40.0)
 
@@ -134,6 +136,7 @@ async def test_auto_water_duration_clamped_to_5_30():
     db.insert_sensor_reading = AsyncMock()
     db.log_action = AsyncMock()
     db.insert_ambient_reading = AsyncMock()
+    db.count_recent_same_action = AsyncMock(return_value=0)  # watcher: no recent firings
 
     miflora_reading = _make_miflora_reading(moisture=10.0)
 
