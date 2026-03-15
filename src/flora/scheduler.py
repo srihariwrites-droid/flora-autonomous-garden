@@ -84,7 +84,20 @@ async def _send_daily_summary(config: AppConfig, db: Database) -> None:
                 "temperature": reading.temperature,
                 "status": status,
             })
-    await send_daily_summary(config.telegram_token, config.telegram_chat_id, summaries)
+    # Collect latest photo per plant
+    photos_dir = Path("photos")
+    photo_paths: dict[str, Path] = {}
+    for plant in config.plants:
+        candidates = list(photos_dir.glob(f"{plant.name}_*.jpg")) if photos_dir.is_dir() else []
+        if candidates:
+            photo_paths[plant.name] = max(candidates, key=lambda p: p.stat().st_mtime)
+
+    await send_daily_summary(
+        config.telegram_token,
+        config.telegram_chat_id,
+        summaries,
+        photo_paths=photo_paths or None,
+    )
 
 
 async def _run_photo_capture(config: AppConfig, db: Database) -> None:
