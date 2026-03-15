@@ -77,6 +77,14 @@ def validate_config(raw: dict) -> list[str]:
     if db_path is not None and not db_path:
         errors.append("[app] db_path must not be empty")
 
+    telegram = raw.get("telegram", {})
+    tg_token = telegram.get("token", "")
+    tg_chat_id = telegram.get("chat_id", "")
+    if bool(tg_token) != bool(tg_chat_id):
+        errors.append(
+            "[telegram] token and chat_id must both be set or both be empty"
+        )
+
     plants = raw.get("plants", [])
 
     seen_names: set[str] = set()
