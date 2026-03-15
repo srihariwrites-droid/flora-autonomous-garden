@@ -12,6 +12,8 @@ from pathlib import Path
 
 _MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 _KNOWN_SPECIES = {"basil", "parsley", "mint", "chives", "coriander"}
+# Pins reserved for I2C (0,1) and UART (14,15) on Raspberry Pi
+_RESERVED_GPIO = {0, 1, 14, 15}
 # Telegram bot token: <numeric_bot_id>:<alphanumeric_secret>
 _TG_TOKEN_RE = re.compile(r"^\d+:[A-Za-z0-9_-]+$")
 # Telegram chat_id: integer (positive for users/channels, negative for groups)
@@ -168,10 +170,13 @@ def validate_config(raw: dict) -> list[str]:
         if gpio is not None:
             if not isinstance(gpio, int) or not (0 <= gpio <= 27):
                 errors.append(f"{label}: pump_gpio must be an integer 0-27 (got {gpio!r})")
-            elif gpio in seen_gpios:
-                errors.append(f"{label}: duplicate pump_gpio {gpio}")
             else:
-                seen_gpios.add(gpio)
+                if gpio in _RESERVED_GPIO:
+                    errors.append(f"{label}: pump_gpio {gpio} is reserved on Raspberry Pi")
+                if gpio in seen_gpios:
+                    errors.append(f"{label}: duplicate pump_gpio {gpio}")
+                else:
+                    seen_gpios.add(gpio)
 
         mn = p.get("moisture_target_min")
         mx = p.get("moisture_target_max")
