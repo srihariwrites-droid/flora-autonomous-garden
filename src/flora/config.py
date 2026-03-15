@@ -61,6 +61,13 @@ class AppConfig:
 def validate_config(raw: dict) -> list[str]:
     """Validate raw TOML dict and return a list of human-readable error strings."""
     errors: list[str] = []
+
+    app = raw.get("app", {})
+    for field_name in ("sensor_poll_interval", "agent_loop_interval"):
+        val = app.get(field_name)
+        if val is not None and not (val >= 1):
+            errors.append(f"[app] {field_name} must be >= 1 (got {val!r})")
+
     plants = raw.get("plants", [])
 
     seen_names: set[str] = set()

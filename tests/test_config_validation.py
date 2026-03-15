@@ -202,3 +202,37 @@ def test_auto_water_min_interval_negative_detected():
 def test_auto_water_min_interval_one_passes():
     raw = {"plants": [_base_plant(auto_water_min_interval_minutes=1)]}
     assert validate_config(raw) == []
+
+
+def test_sensor_poll_interval_zero_detected():
+    raw = {"app": {"sensor_poll_interval": 0}, "plants": []}
+    errors = validate_config(raw)
+    assert any("sensor_poll_interval" in e for e in errors)
+
+
+def test_sensor_poll_interval_negative_detected():
+    raw = {"app": {"sensor_poll_interval": -60}, "plants": []}
+    errors = validate_config(raw)
+    assert any("sensor_poll_interval" in e for e in errors)
+
+
+def test_sensor_poll_interval_one_passes():
+    raw = {"app": {"sensor_poll_interval": 1}, "plants": []}
+    assert validate_config(raw) == []
+
+
+def test_agent_loop_interval_zero_detected():
+    raw = {"app": {"agent_loop_interval": 0}, "plants": []}
+    errors = validate_config(raw)
+    assert any("agent_loop_interval" in e for e in errors)
+
+
+def test_agent_loop_interval_negative_detected():
+    raw = {"app": {"agent_loop_interval": -1}, "plants": []}
+    errors = validate_config(raw)
+    assert any("agent_loop_interval" in e for e in errors)
+
+
+def test_agent_loop_interval_one_passes():
+    raw = {"app": {"agent_loop_interval": 1}, "plants": []}
+    assert validate_config(raw) == []
