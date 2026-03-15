@@ -532,3 +532,31 @@ def test_anthropic_model_non_empty_passes():
 def test_anthropic_model_absent_passes():
     raw = {"plants": [], "anthropic": {"api_key": "sk-test"}}
     assert validate_config(raw) == []
+
+
+def test_sensor_poll_interval_float_detected():
+    raw = {"app": {"sensor_poll_interval": 1800.5}, "plants": []}
+    errors = validate_config(raw)
+    assert any("sensor_poll_interval" in e for e in errors)
+
+
+def test_agent_loop_interval_float_detected():
+    raw = {"app": {"agent_loop_interval": 3600.0}, "plants": []}
+    errors = validate_config(raw)
+    assert any("agent_loop_interval" in e for e in errors)
+
+
+def test_interval_integer_values_pass():
+    raw = {"app": {"sensor_poll_interval": 1800, "agent_loop_interval": 7200}, "plants": []}
+    assert validate_config(raw) == []
+
+
+def test_dashboard_port_float_detected():
+    raw = {"app": {"dashboard_port": 8000.0}, "plants": []}
+    errors = validate_config(raw)
+    assert any("dashboard_port" in e for e in errors)
+
+
+def test_dashboard_port_integer_passes():
+    raw = {"app": {"dashboard_port": 8000}, "plants": []}
+    assert validate_config(raw) == []

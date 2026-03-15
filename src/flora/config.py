@@ -66,11 +66,15 @@ def validate_config(raw: dict) -> list[str]:
     app = raw.get("app", {})
     for field_name in ("sensor_poll_interval", "agent_loop_interval"):
         val = app.get(field_name)
-        if val is not None and not (val >= 1):
+        if val is not None and not isinstance(val, int):
+            errors.append(f"[app] {field_name} must be an integer (got {val!r})")
+        elif val is not None and not (val >= 1):
             errors.append(f"[app] {field_name} must be >= 1 (got {val!r})")
 
     port = app.get("dashboard_port")
-    if port is not None and not (1 <= port <= 65535):
+    if port is not None and not isinstance(port, int):
+        errors.append(f"[app] dashboard_port must be an integer (got {port!r})")
+    elif port is not None and not (1 <= port <= 65535):
         errors.append(f"[app] dashboard_port must be 1-65535 (got {port!r})")
 
     db_path = app.get("db_path")
