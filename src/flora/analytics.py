@@ -1,4 +1,3 @@
-"""Rule-based analytics helpers for plant data."""
 from __future__ import annotations
 
 from flora.db import SensorReading
