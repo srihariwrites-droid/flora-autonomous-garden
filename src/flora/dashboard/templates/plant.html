@@ -102,6 +102,22 @@
             <canvas id="moistureChart"></canvas>
         </div>
         <div id="chart-empty" style="display:none; font-size:0.75rem; color:var(--text-dim); padding:2rem 0; text-align:center;">No data yet</div>
+
+        <div style="margin-top: 1.25rem;">
+            <div class="card-label" style="margin-bottom: 0.5rem;">Light — 48h</div>
+            <div style="position: relative; height: 80px;">
+                <canvas id="lightChart"></canvas>
+            </div>
+            <div id="light-empty" style="display:none; font-size:0.75rem; color:var(--text-dim); padding:1rem 0; text-align:center;">No data yet</div>
+        </div>
+
+        <div style="margin-top: 1.25rem;">
+            <div class="card-label" style="margin-bottom: 0.5rem;">Fertility — 48h</div>
+            <div style="position: relative; height: 80px;">
+                <canvas id="fertilityChart"></canvas>
+            </div>
+            <div id="fertility-empty" style="display:none; font-size:0.75rem; color:var(--text-dim); padding:1rem 0; text-align:center;">No data yet</div>
+        </div>
     </div>
 
 </div>
@@ -220,15 +236,23 @@
     const data = await resp.json();
     const readings = data.readings || [];
 
-    const labels   = readings.map(r => r.ts.slice(5, 16).replace('T', ' '));
-    const moisture = readings.map(r => r.moisture);
-    const temp     = readings.map(r => r.temperature);
+    const labels    = readings.map(r => r.ts.slice(5, 16).replace('T', ' '));
+    const moisture  = readings.map(r => r.moisture);
+    const temp      = readings.map(r => r.temperature);
+    const light     = readings.map(r => r.light);
+    const fertility = readings.map(r => r.fertility);
 
     if (!readings.length) {
         const empty = document.getElementById("chart-empty");
         const canvas = document.getElementById("moistureChart");
         if (empty) empty.style.display = "block";
         if (canvas) canvas.style.display = "none";
+        ["light", "fertility"].forEach(key => {
+            const e = document.getElementById(key + "-empty");
+            const c = document.getElementById(key + "Chart");
+            if (e) e.style.display = "block";
+            if (c) c.style.display = "none";
+        });
         return;
     }
 
@@ -319,6 +343,47 @@
             }
         }
     });
+
+    function _sparkline(canvasId, emptyId, dataset, color, tickSuffix) {
+        const hasData = dataset.some(v => v !== null && v !== undefined);
+        if (!hasData) {
+            const e = document.getElementById(emptyId);
+            const c = document.getElementById(canvasId);
+            if (e) e.style.display = "block";
+            if (c) c.style.display = "none";
+            return;
+        }
+        const c = document.getElementById(canvasId);
+        if (!c) return;
+        new Chart(c, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    data: dataset,
+                    borderColor: color,
+                    backgroundColor: color.replace(')', ',0.06)').replace('rgb', 'rgba'),
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    borderWidth: 1.5,
+                    spanGaps: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                scales: {
+                    x: { display: false },
+                    y: { ticks: { color: '#4A7558', maxTicksLimit: 4, callback: v => v + tickSuffix }, grid: { color: 'rgba(0,220,100,0.04)' } },
+                }
+            }
+        });
+    }
+
+    _sparkline("lightChart", "light-empty", light, '#4DC8FF', ' lux');
+    _sparkline("fertilityChart", "fertility-empty", fertility, '#A78BFA', ' µS');
 })();
 </script>
 {% endblock %}

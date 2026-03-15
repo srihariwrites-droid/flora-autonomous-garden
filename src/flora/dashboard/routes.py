@@ -162,7 +162,6 @@ def create_router(
 
     @router.get("/api/plants/{name}/history")
     async def plant_history_api(name: str, hours: int = 48) -> JSONResponse:
-        """JSON endpoint for Chart.js sensor history."""
         readings = await db.get_sensor_history(name, hours=hours, limit=200)
         data = [
             {
@@ -170,6 +169,7 @@ def create_router(
                 "moisture": r.moisture,
                 "temperature": r.temperature,
                 "light": r.light,
+                "fertility": r.fertility,
             }
             for r in reversed(readings)
         ]

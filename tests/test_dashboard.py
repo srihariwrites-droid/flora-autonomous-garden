@@ -200,3 +200,67 @@ async def test_history_json_shape_and_values(tmp_path):
     assert len(body["moisture"]) == 3
     assert 40.0 in body["moisture"]
     assert 70.0 in body["moisture"]
+
+
+@pytest.mark.asyncio
+async def test_history_api_includes_fertility_and_light(tmp_path):
+    """GET /api/plants/{name}/history includes fertility and light fields per data point."""
+    from flora.db import Database, SensorReading
+    from datetime import datetime, timedelta, timezone
+    from flora.config import load_config
+    from flora.dashboard.app import create_app
+
+    toml = tmp_path / "flora4.toml"
+    toml.write_text(_TOML)
+    config = load_config(str(toml))
+    db4 = Database(tmp_path / "history_fertility.db")
+    await db4.connect()
+
+    now = datetime.now(timezone.utc)
+    await db4.insert_sensor_reading(SensorReading(
+        plant_name="basil-1",
+        timestamp=now - timedelta(hours=1),
+        moisture=50.0,
+        temperature=22.0,
+        light=800,
+        fertility=350,
+        battery=90,
+    ))
+
+    app4 = create_app(config, db4)
+    async with AsyncClient(transport=ASGITransport(app=app4), base_url="http://test") as ac:
+        resp = await ac.get("/api/plants/basil-1/history?hours=48")
+    await db4.close()
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "readings" in body
+    assert len(body["readings"]) == 1
+    reading = body["readings"][0]
+    assert reading["fertility"] == 350
+    assert reading["light"] == 800
+    assert reading["moisture"] == 50.0
+    assert reading["temperature"] == 22.0
+
+
+@pytest.mark.asyncio
+async def test_history_api_returns_null_fertility_when_no_reading(tmp_path):
+    """GET /api/plants/{name}/history returns empty readings list when no data exists."""
+    from flora.db import Database
+    from flora.config import load_config
+    from flora.dashboard.app import create_app
+
+    toml = tmp_path / "flora5.toml"
+    toml.write_text(_TOML)
+    config = load_config(str(toml))
+    db5 = Database(tmp_path / "history_empty.db")
+    await db5.connect()
+
+    app5 = create_app(config, db5)
+    async with AsyncClient(transport=ASGITransport(app=app5), base_url="http://test") as ac:
+        resp = await ac.get("/api/plants/basil-1/history?hours=48")
+    await db5.close()
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["readings"] == []
