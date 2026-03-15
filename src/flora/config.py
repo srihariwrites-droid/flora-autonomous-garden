@@ -1,12 +1,16 @@
 """TOML configuration loader for Flora."""
 from __future__ import annotations
 
+import re
+
 try:
     import tomllib
 except ImportError:
     import tomli as tomllib  # type: ignore[no-redef]
 from dataclasses import dataclass, field
 from pathlib import Path
+
+_MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 
 
 @dataclass(frozen=True)
@@ -51,6 +55,58 @@ class AppConfig:
         return next((p for p in self.smart_plugs if p.role == role), None)
 
 
+def validate_config(raw: dict) -> list[str]:
+    """Validate raw TOML dict and return a list of human-readable error strings."""
+    errors: list[str] = []
+    plants = raw.get("plants", [])
+
+    seen_names: set[str] = set()
+    seen_macs: set[str] = set()
+    seen_gpios: set[int] = set()
+
+    for i, p in enumerate(plants):
+        label = f"Plant #{i + 1}"
+
+        # Required fields
+        for field_name in ("name", "species", "sensor_mac", "pump_gpio"):
+            if field_name not in p:
+                errors.append(f"{label}: missing required field '{field_name}'")
+
+        name = p.get("name")
+        if name is not None:
+            if name in seen_names:
+                errors.append(f"{label}: duplicate plant name '{name}'")
+            seen_names.add(name)
+            label = f"Plant '{name}'"
+
+        mac = p.get("sensor_mac")
+        if mac is not None:
+            if not _MAC_RE.match(mac):
+                errors.append(f"{label}: invalid sensor_mac '{mac}' (expected XX:XX:XX:XX:XX:XX)")
+            elif mac.upper() in seen_macs:
+                errors.append(f"{label}: duplicate sensor_mac '{mac}'")
+            else:
+                seen_macs.add(mac.upper())
+
+        gpio = p.get("pump_gpio")
+        if gpio is not None:
+            if not isinstance(gpio, int) or not (0 <= gpio <= 27):
+                errors.append(f"{label}: pump_gpio must be an integer 0-27 (got {gpio!r})")
+            elif gpio in seen_gpios:
+                errors.append(f"{label}: duplicate pump_gpio {gpio}")
+            else:
+                seen_gpios.add(gpio)
+
+        mn = p.get("moisture_target_min")
+        mx = p.get("moisture_target_max")
+        if mn is not None and mx is not None and mn >= mx:
+            errors.append(
+                f"{label}: moisture_target_min ({mn}) must be less than moisture_target_max ({mx})"
+            )
+
+    return errors
+
+
 def append_plant_to_toml(path: str | Path, plant: dict) -> None:
     """Append a new [[plants]] entry to flora.toml, preserving all existing content."""
     config_path = Path(path)
@@ -75,6 +131,10 @@ def load_config(path: str | Path = "flora.toml") -> AppConfig:
 
     with open(config_path, "rb") as f:
         raw = tomllib.load(f)
+
+    errors = validate_config(raw)
+    if errors:
+        raise ValueError("flora.toml validation failed:\n" + "\n".join(errors))
 
     app_section = raw.get("app", {})
     anthropic_section = raw.get("anthropic", {})
