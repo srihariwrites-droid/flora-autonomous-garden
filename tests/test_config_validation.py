@@ -323,7 +323,9 @@ def test_auto_water_if_below_above_100_detected():
 
 def test_auto_water_if_below_valid_boundaries_pass():
     for val in (0, 50, 100):
-        raw = {"plants": [_base_plant(auto_water_if_below=val)]}
+        p = _base_plant(auto_water_if_below=val)
+        del p["moisture_target_min"]  # isolate range check from cross-field check
+        raw = {"plants": [p]}
         assert validate_config(raw) == [], f"Expected no errors for auto_water_if_below={val}"
 
 
@@ -591,7 +593,9 @@ def test_auto_water_if_below_float_detected():
 
 
 def test_auto_water_if_below_integer_passes():
-    raw = {"plants": [_base_plant(auto_water_if_below=45)]}
+    p = _base_plant(auto_water_if_below=45)
+    del p["moisture_target_min"]  # isolate type check from cross-field check
+    raw = {"plants": [p]}
     assert validate_config(raw) == []
 
 
@@ -689,4 +693,31 @@ def test_model_with_newline_detected():
 
 def test_model_exactly_100_chars_passes():
     raw = {"anthropic": {"api_key": "sk-fake", "model": "a" * 100}}
+    assert validate_config(raw) == []
+
+
+def test_auto_water_if_below_less_than_min_passes():
+    raw = {"plants": [_base_plant(auto_water_if_below=30, moisture_target_min=40)]}
+    assert validate_config(raw) == []
+
+
+def test_auto_water_if_below_equal_to_min_detected():
+    raw = {"plants": [_base_plant(auto_water_if_below=40, moisture_target_min=40)]}
+    errors = validate_config(raw)
+    assert any("auto_water_if_below" in e for e in errors)
+
+
+def test_auto_water_if_below_greater_than_min_detected():
+    raw = {"plants": [_base_plant(auto_water_if_below=50, moisture_target_min=40)]}
+    errors = validate_config(raw)
+    assert any("auto_water_if_below" in e for e in errors)
+
+
+def test_auto_water_if_below_absent_no_cross_error():
+    raw = {"plants": [_base_plant(moisture_target_min=40)]}
+    assert validate_config(raw) == []
+
+
+def test_moisture_target_min_absent_no_cross_error():
+    raw = {"plants": [_base_plant(auto_water_if_below=30)]}
     assert validate_config(raw) == []
