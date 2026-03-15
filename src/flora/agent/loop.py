@@ -1,8 +1,10 @@
 """Main Claude agent reasoning loop for Flora."""
 from __future__ import annotations
 
+import base64
 import logging
 from datetime import datetime
+from pathlib import Path
 
 import anthropic
 
@@ -84,14 +86,35 @@ class AgentLoop:
                 )
             )
 
-        user_message = (
+        text_content = (
             f"Current time: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}\n\n"
             "Please review all plants and take any necessary actions.\n\n"
             + "\n\n".join(plant_contexts)
         )
 
+        # Build user message content blocks — include plant photos when available
+        content: list[dict] = []
+        photos_dir = Path("photos")
+        for plant in self._config.plants:
+            photo_path = _latest_photo(photos_dir, plant.name)
+            if photo_path is not None:
+                try:
+                    b64 = base64.standard_b64encode(photo_path.read_bytes()).decode()
+                    content.append({
+                        "type": "image",
+                        "source": {"type": "base64", "media_type": "image/jpeg", "data": b64},
+                    })
+                    content.append({
+                        "type": "text",
+                        "text": f"[Photo of {plant.name} taken {photo_path.stat().st_mtime:.0f}s ago]",
+                    })
+                except Exception as exc:
+                    logger.warning("Could not attach photo for %s: %s", plant.name, exc)
+
+        content.append({"type": "text", "text": text_content})
+
         messages: list[anthropic.types.MessageParam] = [
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": content}  # type: ignore[list-item]
         ]
 
         # Agentic loop: continue until no more tool calls
@@ -159,3 +182,13 @@ class AgentLoop:
                     entry_type="action",
                     content=f"Fallback watering: moisture was {reading.moisture:.1f}%. Claude API unavailable.",
                 ))
+
+
+def _latest_photo(photos_dir: Path, plant_name: str) -> Path | None:
+    """Return the most recently modified photo for a plant, or None."""
+    if not photos_dir.is_dir():
+        return None
+    candidates = list(photos_dir.glob(f"{plant_name}_*.jpg"))
+    if not candidates:
+        return None
+    return max(candidates, key=lambda p: p.stat().st_mtime)
