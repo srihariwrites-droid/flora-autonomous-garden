@@ -7,7 +7,7 @@ from datetime import time as dtime
 
 logger = logging.getLogger(__name__)
 
-IS_PI = platform.machine() == "aarch64"
+IS_PI = platform.machine() in ("aarch64", "armv7l")
 
 
 async def toggle_plug(host: str, alias: str, on: bool) -> bool:
