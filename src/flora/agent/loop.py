@@ -118,7 +118,8 @@ class AgentLoop:
         ]
 
         # Agentic loop: continue until no more tool calls
-        for iteration in range(10):  # safety limit
+        _MAX_ITERATIONS = 10
+        for iteration in range(_MAX_ITERATIONS):  # safety limit
             response = await self._client.messages.create(
                 model=self._config.anthropic_model,
                 max_tokens=4096,
@@ -135,6 +136,14 @@ class AgentLoop:
             if not tool_uses:
                 # No more tool calls — agent is done
                 logger.info("Agent loop completed after %d iterations", iteration + 1)
+                break
+
+            if iteration == _MAX_ITERATIONS - 1:
+                logger.warning(
+                    "Agent loop hit %d-iteration safety cap without reaching end_turn — "
+                    "possible runaway tool loop",
+                    _MAX_ITERATIONS,
+                )
                 break
 
             # Execute all tool calls
