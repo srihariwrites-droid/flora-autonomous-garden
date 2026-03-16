@@ -146,9 +146,10 @@ def test_load_config_raises_on_invalid(tmp_path):
 
 
 def test_auto_water_duration_too_low_detected():
-    raw = {"plants": [_base_plant(auto_water_duration_seconds=0)]}
-    errors = validate_config(raw)
-    assert any("auto_water_duration_seconds" in e for e in errors)
+    for val in (0, 1, 4):
+        raw = {"plants": [_base_plant(auto_water_duration_seconds=val)]}
+        errors = validate_config(raw)
+        assert any("auto_water_duration_seconds" in e for e in errors), f"Expected error for duration={val}"
 
 
 def test_auto_water_duration_too_high_detected():
@@ -158,7 +159,7 @@ def test_auto_water_duration_too_high_detected():
 
 
 def test_auto_water_duration_valid_range_passes():
-    for val in (1, 15, 30):
+    for val in (5, 15, 30):
         raw = {"plants": [_base_plant(auto_water_duration_seconds=val)]}
         assert validate_config(raw) == [], f"Expected no errors for duration={val}"
 

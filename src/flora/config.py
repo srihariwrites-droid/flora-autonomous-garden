@@ -40,7 +40,7 @@ class PlantConfig:
     moisture_target_max: int = 70
     # Optional deterministic auto-water rule (no Claude API needed)
     auto_water_if_below: int | None = None   # moisture % threshold
-    auto_water_duration_seconds: int = 8     # pump seconds (clamped 5-30)
+    auto_water_duration_seconds: int = 8     # pump seconds (5-30)
     auto_water_min_interval_minutes: int = 15  # minimum minutes between auto-water firings
     # Camera assignment (index into Picamera2 camera list; None = default 0)
     camera_index: int | None = None
@@ -231,9 +231,9 @@ def validate_config(raw: dict) -> list[str]:
             errors.append(
                 f"{label}: auto_water_duration_seconds must be an integer (got {duration!r})"
             )
-        elif duration is not None and not (1 <= duration <= 30):
+        elif duration is not None and not (5 <= duration <= 30):
             errors.append(
-                f"{label}: auto_water_duration_seconds must be 1-30 (got {duration!r})"
+                f"{label}: auto_water_duration_seconds must be 5-30 (got {duration!r})"
             )
 
         interval = p.get("auto_water_min_interval_minutes")
