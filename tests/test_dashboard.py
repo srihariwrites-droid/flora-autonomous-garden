@@ -15,7 +15,7 @@ sensor_poll_interval = 1800
 agent_loop_interval = 7200
 
 [anthropic]
-api_key = "test"
+api_key = "sk-ant-xxxxxxxxxxxxxxxxxxxx"
 model = "claude-haiku-4-5-20251001"
 
 [telegram]

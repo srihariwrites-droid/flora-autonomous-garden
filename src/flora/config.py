@@ -305,10 +305,6 @@ def validate_config(raw: dict) -> list[str]:
                 errors.append(
                     f"{label}: alias must contain only letters, digits, underscores, or hyphens (got {alias!r})"
                 )
-            elif alias in ("grow_light", "humidifier", "fan"):
-                errors.append(
-                    f"{label}: alias must not be a reserved role name (got {alias!r})"
-                )
             if alias in seen_plug_aliases:
                 errors.append(f"{label}: duplicate alias '{alias}'")
             else:
