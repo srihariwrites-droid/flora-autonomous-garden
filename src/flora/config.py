@@ -87,6 +87,17 @@ def validate_config(raw: dict) -> list[str]:
         elif val is not None and not (1 <= val <= 86400):
             errors.append(f"[app] {field_name} must be 1-86400 (got {val!r})")
 
+    poll = app.get("sensor_poll_interval")
+    loop = app.get("agent_loop_interval")
+    if (
+        poll is not None and loop is not None
+        and isinstance(poll, int) and isinstance(loop, int)
+        and poll >= loop
+    ):
+        errors.append(
+            f"[app] sensor_poll_interval ({poll}) must be less than agent_loop_interval ({loop})"
+        )
+
     port = app.get("dashboard_port")
     if port is not None and not isinstance(port, int):
         errors.append(f"[app] dashboard_port must be an integer (got {port!r})")

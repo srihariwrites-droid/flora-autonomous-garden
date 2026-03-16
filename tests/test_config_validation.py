@@ -571,6 +571,23 @@ def test_interval_integer_values_pass():
     assert validate_config(raw) == []
 
 
+def test_poll_interval_equal_to_loop_interval_detected():
+    raw = {"app": {"sensor_poll_interval": 3600, "agent_loop_interval": 3600}, "plants": []}
+    errors = validate_config(raw)
+    assert any("sensor_poll_interval" in e and "agent_loop_interval" in e for e in errors)
+
+
+def test_poll_interval_greater_than_loop_interval_detected():
+    raw = {"app": {"sensor_poll_interval": 7200, "agent_loop_interval": 3600}, "plants": []}
+    errors = validate_config(raw)
+    assert any("sensor_poll_interval" in e and "agent_loop_interval" in e for e in errors)
+
+
+def test_poll_interval_less_than_loop_interval_passes():
+    raw = {"app": {"sensor_poll_interval": 1800, "agent_loop_interval": 7200}, "plants": []}
+    assert not any("agent_loop_interval" in e and "sensor_poll_interval" in e for e in validate_config(raw))
+
+
 def test_dashboard_port_float_detected():
     raw = {"app": {"dashboard_port": 8000.0}, "plants": []}
     errors = validate_config(raw)
