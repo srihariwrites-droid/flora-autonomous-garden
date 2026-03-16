@@ -272,6 +272,8 @@ def validate_config(raw: dict) -> list[str]:
             ord(c) < 32 and c not in ("\t", "\n") for c in notes
         ):
             errors.append(f"{label}: notes must not contain control characters")
+        if notes is not None and notes and not notes.strip():
+            errors.append(f"{label}: notes must not be whitespace-only")
 
     seen_plug_aliases: set[str] = set()
     seen_plug_hosts: set[str] = set()
