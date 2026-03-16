@@ -46,7 +46,7 @@ async def db(tmp_path):
 @pytest.fixture
 def config(tmp_path):
     toml = tmp_path / "flora.toml"
-    toml.write_text(_TOML_BASE.format(api_key="test-key"))
+    toml.write_text(_TOML_BASE.format(api_key="sk-ant-xxxxxxxxxxxxxxxxxxxx"))
     return load_config(str(toml))
 
 
@@ -61,7 +61,7 @@ async def test_agent_loop_runs_without_error(config, db):
 async def test_fallback_runs_when_api_key_invalid(tmp_path, db):
     """Fallback rule-based loop runs when API key is invalid."""
     toml = tmp_path / "flora.toml"
-    toml.write_text(_TOML_BASE.format(api_key="sk-ant-invalid"))
+    toml.write_text(_TOML_BASE.format(api_key="sk-ant-invalidxxxxxxxxxxxxxxx"))
     config = load_config(str(toml))
     loop = AgentLoop(config, db)
     # Invalid key → fallback. Should not raise.

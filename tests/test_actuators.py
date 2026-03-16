@@ -66,7 +66,7 @@ def _make_config(tmp_path: Path) -> "AppConfig":
     import textwrap
     toml_text = textwrap.dedent("""\
         [anthropic]
-        api_key = "sk-test"
+        api_key = "sk-ant-xxxxxxxxxxxxxxxxxxxx"
         model   = "claude-haiku-4-5-20251001"
 
         [telegram]
@@ -152,7 +152,7 @@ async def test_set_light_schedule_no_plug_configured(tmp_path: Path) -> None:
     import textwrap
     toml_text = textwrap.dedent("""\
         [anthropic]
-        api_key = "sk-test"
+        api_key = "sk-ant-xxxxxxxxxxxxxxxxxxxx"
         model   = "claude-haiku-4-5-20251001"
 
         [telegram]
