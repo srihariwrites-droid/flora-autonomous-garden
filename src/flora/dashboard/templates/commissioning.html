@@ -123,9 +123,7 @@
         </div>
         <div style="display: flex; justify-content: space-between;">
             <button type="button" class="btn" onclick="goToStep(3)">← Back</button>
-            <form method="post" action="/plants/new" id="saveForm" style="display: inline;">
-                <button type="submit" class="btn btn-primary">Save plant</button>
-            </form>
+            <button type="button" class="btn btn-primary" onclick="savePlant(this)">Save plant</button>
         </div>
     </div>
 </div>
@@ -212,6 +210,33 @@ function makeRow(label, value) {
     row.appendChild(lbl);
     row.appendChild(val);
     return row;
+}
+
+async function savePlant(btn) {
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    var fd = new FormData();
+    fd.append('name',                 document.getElementById('name').value.trim());
+    fd.append('species',              document.getElementById('species').value);
+    fd.append('sensor_mac',           document.getElementById('sensor_mac').value.trim());
+    fd.append('pump_gpio',            document.getElementById('pump_gpio').value);
+    fd.append('moisture_target_min',  document.getElementById('moisture_min').value);
+    fd.append('moisture_target_max',  document.getElementById('moisture_max').value);
+    try {
+        var resp = await fetch('/plants/new', { method: 'POST', body: fd });
+        if (resp.ok || resp.redirected) {
+            window.location.href = resp.url || '/plants/' + document.getElementById('name').value.trim();
+        } else {
+            var text = await resp.text();
+            alert('Save failed: ' + text);
+            btn.disabled = false;
+            btn.textContent = 'Save plant';
+        }
+    } catch(e) {
+        alert('Network error: ' + e);
+        btn.disabled = false;
+        btn.textContent = 'Save plant';
+    }
 }
 
 function goToStep2IfValidMac() {
