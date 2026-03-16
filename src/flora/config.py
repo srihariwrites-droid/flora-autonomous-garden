@@ -307,6 +307,10 @@ def validate_config(raw: dict) -> list[str]:
                 errors.append(
                     f"{label}: host must be a valid IPv4 address or hostname (got {host!r})"
                 )
+            elif host in ("localhost", "127.0.0.1", "::1"):
+                errors.append(
+                    f"{label}: host must not be a loopback address (got {host!r})"
+                )
             if host in seen_plug_hosts:
                 errors.append(f"{label}: duplicate host '{host}'")
             else:
