@@ -636,6 +636,30 @@ def test_plug_host_invalid_format_detected():
         assert any("host" in e for e in errors), f"Expected error for host={host!r}"
 
 
+def test_plug_host_loopback_ipv4_detected():
+    raw = {"plants": [], "smart_plugs": [_base_plug(host="127.0.0.1")]}
+    errors = validate_config(raw)
+    assert any("loopback" in e for e in errors)
+
+
+def test_plug_host_localhost_detected():
+    raw = {"plants": [], "smart_plugs": [_base_plug(host="localhost")]}
+    errors = validate_config(raw)
+    assert any("loopback" in e for e in errors)
+
+
+def test_plug_host_loopback_ipv6_detected():
+    # ::1 fails the format check (not a valid IPv4/hostname) before reaching loopback check
+    raw = {"plants": [], "smart_plugs": [_base_plug(host="::1")]}
+    errors = validate_config(raw)
+    assert any("host" in e for e in errors)
+
+
+def test_plug_host_lan_address_passes():
+    raw = {"plants": [], "smart_plugs": [_base_plug(host="192.168.1.10")]}
+    assert validate_config(raw) == []
+
+
 def test_plant_name_valid_chars_pass():
     for name in ("basil", "my-herb", "herb_1", "Mint", "coriander-2"):
         raw = {"plants": [_base_plant(name=name)]}
