@@ -393,6 +393,18 @@ def test_db_path_control_char_detected():
     assert any("db_path" in e for e in errors)
 
 
+def test_db_path_whitespace_only_detected():
+    raw = {"app": {"db_path": "   "}, "plants": [_base_plant()]}
+    errors = validate_config(raw)
+    assert any("db_path" in e and "whitespace" in e for e in errors)
+
+
+def test_db_path_whitespace_only_tabs_detected():
+    raw = {"app": {"db_path": "\t\t"}, "plants": [_base_plant()]}
+    errors = validate_config(raw)
+    assert any("db_path" in e and "whitespace" in e for e in errors)
+
+
 def test_notes_too_long_detected():
     raw = {"plants": [_base_plant(notes="x" * 501)]}
     errors = validate_config(raw)
