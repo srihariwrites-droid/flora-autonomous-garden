@@ -492,7 +492,7 @@ def test_smart_plug_unique_aliases_pass():
         "plants": [],
         "smart_plugs": [
             _base_plug(alias="grow-light", host="192.168.1.10"),
-            _base_plug(alias="humidifier", host="192.168.1.11", role="humidifier"),
+            _base_plug(alias="my-humidifier", host="192.168.1.11", role="humidifier"),
         ],
     }
     assert validate_config(raw) == []
@@ -515,7 +515,7 @@ def test_smart_plug_unique_hosts_pass():
         "plants": [],
         "smart_plugs": [
             _base_plug(alias="grow-light", host="192.168.1.10"),
-            _base_plug(alias="humidifier", host="192.168.1.11", role="humidifier"),
+            _base_plug(alias="my-humidifier", host="192.168.1.11", role="humidifier"),
         ],
     }
     assert validate_config(raw) == []
@@ -686,7 +686,7 @@ def test_plant_name_empty_detected():
 
 
 def test_plug_alias_valid_chars_pass():
-    for alias in ("grow-light", "humidifier_1", "fan", "MyFan"):
+    for alias in ("grow-light", "humidifier_1", "my-fan", "MyFan"):
         raw = {"plants": [], "smart_plugs": [_base_plug(alias=alias)]}
         assert validate_config(raw) == [], f"Expected no errors for alias={alias!r}"
 
@@ -708,6 +708,24 @@ def test_plug_alias_empty_detected():
     raw = {"plants": [], "smart_plugs": [_base_plug(alias="")]}
     errors = validate_config(raw)
     assert any("alias" in e for e in errors)
+
+
+def test_plug_alias_reserved_role_grow_light_detected():
+    raw = {"plants": [], "smart_plugs": [_base_plug(alias="grow_light")]}
+    errors = validate_config(raw)
+    assert any("alias" in e and "reserved" in e for e in errors)
+
+
+def test_plug_alias_reserved_role_humidifier_detected():
+    raw = {"plants": [], "smart_plugs": [_base_plug(alias="humidifier")]}
+    errors = validate_config(raw)
+    assert any("alias" in e and "reserved" in e for e in errors)
+
+
+def test_plug_alias_reserved_role_fan_detected():
+    raw = {"plants": [], "smart_plugs": [_base_plug(alias="fan")]}
+    errors = validate_config(raw)
+    assert any("alias" in e and "reserved" in e for e in errors)
 
 
 def test_model_valid_passes():
