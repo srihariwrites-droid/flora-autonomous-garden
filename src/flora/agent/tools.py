@@ -152,7 +152,7 @@ class ToolExecutor:
 
     async def _water_plant(self, inp: dict[str, Any]) -> str:
         plant_name: str = inp["plant_name"]
-        duration: int = int(inp["duration_seconds"])
+        duration: int = max(5, min(30, int(inp["duration_seconds"])))
         reason: str = inp["reason"]
 
         plant = self._config.plant_by_name(plant_name)

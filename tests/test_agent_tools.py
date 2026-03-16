@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -85,3 +85,31 @@ async def test_get_ambient_reading_average_no_data():
     result = await executor.execute("get_ambient_reading", {"hours": 12})
 
     assert "No ambient readings" in result
+
+
+async def test_water_plant_clamps_duration_above_max():
+    """Duration > 30 is clamped to 30 before firing the pump."""
+    db = AsyncMock(spec=Database)
+    db.log_action = AsyncMock()
+    executor = ToolExecutor(_CONFIG, db)
+    with patch("flora.agent.tools._water_plant", new=AsyncMock(return_value=True)) as mock_pump:
+        result = await executor.execute(
+            "water_plant",
+            {"plant_name": "basil-1", "duration_seconds": 120, "reason": "test"},
+        )
+    mock_pump.assert_awaited_once_with(17, 30)
+    assert "30s" in result
+
+
+async def test_water_plant_clamps_duration_below_min():
+    """Duration < 5 is clamped to 5 before firing the pump."""
+    db = AsyncMock(spec=Database)
+    db.log_action = AsyncMock()
+    executor = ToolExecutor(_CONFIG, db)
+    with patch("flora.agent.tools._water_plant", new=AsyncMock(return_value=True)) as mock_pump:
+        result = await executor.execute(
+            "water_plant",
+            {"plant_name": "basil-1", "duration_seconds": 1, "reason": "test"},
+        )
+    mock_pump.assert_awaited_once_with(17, 5)
+    assert "5s" in result
