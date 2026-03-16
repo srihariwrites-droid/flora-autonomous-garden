@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
 from flora.config import AppConfig, PlantConfig, SmartPlugConfig
@@ -170,6 +170,70 @@ async def test_daily_summary_reports_dry_at_15_percent():
 
     assert captured, "send_daily_summary was not called"
     assert captured[0][0]["status"] == "dry"
+
+
+async def test_create_scheduler_registers_prune_job():
+    """create_scheduler must register a weekly prune_old_readings cron job."""
+    db = AsyncMock(spec=Database)
+    db.get_plug_schedule.return_value = None
+
+    scheduler = await create_scheduler(_CONFIG, db)
+
+    job_ids = {job.id for job in scheduler.get_jobs()}
+    assert "prune_old_readings" in job_ids, f"prune_old_readings not in jobs: {job_ids}"
+
+
+@pytest.mark.asyncio
+async def test_prune_old_readings_deletes_old_rows(tmp_path):
+    """prune_old_readings deletes rows older than the threshold and keeps newer ones."""
+    from flora.db import AmbientReading
+
+    db = Database(tmp_path / "test.db")
+    await db.connect()
+
+    now = datetime(2026, 3, 16, 12, 0, 0)
+    old_ts = now - timedelta(days=100)
+    new_ts = now - timedelta(days=10)
+
+    await db.insert_sensor_reading(SensorReading(
+        plant_name="basil-1", timestamp=old_ts,
+        moisture=40.0, temperature=22.0, light=300, fertility=500, battery=90,
+    ))
+    await db.insert_sensor_reading(SensorReading(
+        plant_name="basil-1", timestamp=new_ts,
+        moisture=50.0, temperature=22.0, light=300, fertility=500, battery=90,
+    ))
+    await db.insert_ambient_reading(AmbientReading(
+        timestamp=old_ts, temperature=21.0, humidity=55.0, light_lux=200.0,
+    ))
+    await db.insert_ambient_reading(AmbientReading(
+        timestamp=new_ts, temperature=21.0, humidity=55.0, light_lux=200.0,
+    ))
+
+    sensor_del, ambient_del = await db.prune_old_readings(days=90)
+    await db.close()
+
+    assert sensor_del == 1, f"Expected 1 sensor row deleted, got {sensor_del}"
+    assert ambient_del == 1, f"Expected 1 ambient row deleted, got {ambient_del}"
+
+
+@pytest.mark.asyncio
+async def test_prune_old_readings_keeps_recent_rows(tmp_path):
+    """prune_old_readings returns zero counts when all rows are within the threshold."""
+    db = Database(tmp_path / "test.db")
+    await db.connect()
+
+    recent_ts = datetime(2026, 3, 16, 12, 0, 0) - timedelta(days=5)
+    await db.insert_sensor_reading(SensorReading(
+        plant_name="basil-1", timestamp=recent_ts,
+        moisture=40.0, temperature=22.0, light=300, fertility=500, battery=90,
+    ))
+
+    sensor_del, ambient_del = await db.prune_old_readings(days=90)
+    await db.close()
+
+    assert sensor_del == 0
+    assert ambient_del == 0
 
 
 @pytest.mark.asyncio

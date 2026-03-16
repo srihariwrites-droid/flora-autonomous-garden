@@ -138,6 +138,15 @@ async def _run_agent(config: AppConfig, db: Database) -> None:
     await agent.run_once()
 
 
+async def _prune_old_readings(db: Database, days: int = 90) -> None:
+    """Delete sensor and ambient readings older than `days` days."""
+    sensor_del, ambient_del = await db.prune_old_readings(days=days)
+    logger.info(
+        "Pruned old readings: %d sensor rows, %d ambient rows (older than %d days)",
+        sensor_del, ambient_del, days,
+    )
+
+
 async def _send_daily_summary(config: AppConfig, db: Database) -> None:
     """Collect latest readings and send daily Telegram summary."""
     summaries: list[dict[str, object]] = []
@@ -242,6 +251,19 @@ async def create_scheduler(config: AppConfig, db: Database) -> AsyncIOScheduler:
         args=[config, db],
         id="daily_photo",
         name="Daily photo capture",
+        replace_existing=True,
+    )
+
+    # Weekly pruning: delete readings older than 90 days (Sunday 03:00)
+    scheduler.add_job(
+        _prune_old_readings,
+        trigger="cron",
+        day_of_week="sun",
+        hour=3,
+        minute=0,
+        args=[db],
+        id="prune_old_readings",
+        name="Prune old readings",
         replace_existing=True,
     )
 

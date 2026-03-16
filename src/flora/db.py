@@ -324,6 +324,26 @@ class Database:
             row = await cursor.fetchone()
         return int(row[0]) if row else 0
 
+    # --- Maintenance ---
+
+    async def prune_old_readings(self, days: int = 90) -> tuple[int, int]:
+        """Delete sensor and ambient readings older than `days` days.
+
+        Returns (sensor_rows_deleted, ambient_rows_deleted).
+        """
+        conn = self._conn_or_raise()
+        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        async with conn.execute(
+            "DELETE FROM sensor_readings WHERE timestamp < ?", (cutoff,)
+        ) as cur:
+            sensor_deleted = cur.rowcount
+        async with conn.execute(
+            "DELETE FROM ambient_readings WHERE timestamp < ?", (cutoff,)
+        ) as cur:
+            ambient_deleted = cur.rowcount
+        await conn.commit()
+        return sensor_deleted, ambient_deleted
+
     # --- Plug schedules ---
 
     async def upsert_plug_schedule(self, schedule: PlugSchedule) -> None:
