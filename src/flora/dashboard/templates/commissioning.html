@@ -36,7 +36,7 @@
     </div>
     <div style="margin-top: 1.25rem;">
         <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Sensor MAC address</label>
-        <input type="text" id="sensor_mac" name="sensor_mac" placeholder="AA:BB:CC:DD:EE:FF"
+        <input type="text" id="sensor_mac" name="sensor_mac" form="saveForm" placeholder="AA:BB:CC:DD:EE:FF"
                style="width: 100%; max-width: 260px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;"
                oninput="this.value = this.value.toUpperCase()">
     </div>
@@ -52,13 +52,13 @@
 
         <div>
             <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Plant name</label>
-            <input type="text" id="name" placeholder="basil-1" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
+            <input type="text" id="name" name="name" form="saveForm" placeholder="basil-1" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
             <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 0.3rem;">Unique identifier, no spaces</div>
         </div>
 
         <div>
             <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Species</label>
-            <select id="species" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
+            <select id="species" name="species" form="saveForm" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
                 <option value="basil">Basil</option>
                 <option value="mint">Mint</option>
                 <option value="parsley">Parsley</option>
@@ -70,7 +70,7 @@
 
         <div>
             <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Pump GPIO pin</label>
-            <select id="pump_gpio" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
+            <select id="pump_gpio" name="pump_gpio" form="saveForm" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
                 {% for pin in free_gpio %}
                 <option value="{{ pin }}">GPIO {{ pin }}</option>
                 {% else %}
@@ -81,12 +81,12 @@
 
         <div>
             <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Moisture target min %</label>
-            <input type="number" id="moisture_min" value="40" min="0" max="100" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
+            <input type="number" id="moisture_min" name="moisture_target_min" form="saveForm" value="40" min="0" max="100" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
         </div>
 
         <div>
             <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Moisture target max %</label>
-            <input type="number" id="moisture_max" value="70" min="0" max="100" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
+            <input type="number" id="moisture_max" name="moisture_target_max" form="saveForm" value="70" min="0" max="100" style="width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;">
         </div>
     </div>
     <div style="display: flex; justify-content: space-between;">
@@ -121,13 +121,7 @@
         </div>
         <div style="display: flex; justify-content: space-between;">
             <button type="button" class="btn" onclick="goToStep(3)">← Back</button>
-            <form method="post" action="/plants/new" id="saveForm" style="display: inline;" onsubmit="buildSummary()">
-                <input type="hidden" name="name" id="f_name">
-                <input type="hidden" name="species" id="f_species">
-                <input type="hidden" name="sensor_mac" id="f_mac">
-                <input type="hidden" name="pump_gpio" id="f_gpio">
-                <input type="hidden" name="moisture_target_min" id="f_min">
-                <input type="hidden" name="moisture_target_max" id="f_max">
+            <form method="post" action="/plants/new" id="saveForm" style="display: inline;">
                 <button type="submit" class="btn btn-primary">Save plant</button>
             </form>
         </div>
