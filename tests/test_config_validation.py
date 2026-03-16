@@ -318,6 +318,7 @@ def test_auto_water_if_below_valid_boundaries_pass():
     for val in (0, 50, 100):
         p = _base_plant(auto_water_if_below=val)
         del p["moisture_target_min"]  # isolate range check from cross-field check
+        del p["moisture_target_max"]  # isolate range check from cross-field check
         raw = {"plants": [p]}
         assert validate_config(raw) == [], f"Expected no errors for auto_water_if_below={val}"
 
@@ -731,6 +732,21 @@ def test_auto_water_if_below_greater_than_min_detected():
 
 def test_auto_water_if_below_absent_no_cross_error():
     raw = {"plants": [_base_plant(moisture_target_min=40)]}
+    assert validate_config(raw) == []
+
+
+def test_auto_water_if_below_above_max_detected():
+    p = _base_plant(auto_water_if_below=75, moisture_target_max=70)
+    del p["moisture_target_min"]
+    raw = {"plants": [p]}
+    errors = validate_config(raw)
+    assert any("auto_water_if_below" in e for e in errors)
+
+
+def test_auto_water_if_below_below_max_passes():
+    p = _base_plant(auto_water_if_below=35, moisture_target_max=70)
+    del p["moisture_target_min"]
+    raw = {"plants": [p]}
     assert validate_config(raw) == []
 
 
