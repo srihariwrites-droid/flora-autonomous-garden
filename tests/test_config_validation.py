@@ -886,6 +886,24 @@ def test_notes_control_char_detected():
     assert any("notes" in e and "control" in e for e in errors)
 
 
+def test_notes_whitespace_only_detected():
+    raw = {"plants": [_base_plant(notes="   ")]}
+    errors = validate_config(raw)
+    assert any("notes" in e and "whitespace" in e for e in errors)
+
+
+def test_notes_whitespace_only_tabs_detected():
+    raw = {"plants": [_base_plant(notes="\t\t")]}
+    errors = validate_config(raw)
+    assert any("notes" in e and "whitespace" in e for e in errors)
+
+
+def test_notes_with_content_and_spaces_passes():
+    raw = {"plants": [_base_plant(notes="  some note  ")]}
+    errors = validate_config(raw)
+    assert not any("whitespace" in e for e in errors)
+
+
 def test_moisture_float_min_no_false_cross_field_error():
     """A float moisture_target_min should produce a type error but NOT a cross-field error."""
     raw = {"plants": [_base_plant(moisture_target_min=20.5, moisture_target_max=70)]}
