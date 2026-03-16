@@ -77,7 +77,8 @@ async def _send_plant_photos(
             m_str = f"{moisture:.0f}%" if isinstance(moisture, (int, float)) else "N/A"
             caption = f"{name} — {status}, moisture {m_str}"
             try:
-                await bot.send_photo(chat_id=chat_id, photo=photo.open("rb"), caption=caption)
+                with photo.open("rb") as fh:
+                    await bot.send_photo(chat_id=chat_id, photo=fh, caption=caption)
                 logger.info("Sent photo for %s", name)
             except Exception as exc:
                 logger.warning("Could not send photo for %s: %s", name, exc)

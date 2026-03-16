@@ -99,3 +99,27 @@ async def test_send_daily_summary_returns_false_for_empty_summaries():
 
     assert result is False
     mock_tg.assert_not_awaited()
+
+
+async def test_photo_file_handle_closed_after_send(tmp_path):
+    """File handle opened for send_photo must be closed after the call returns."""
+    from flora.notifications import send_daily_summary
+
+    basil_photo = tmp_path / "basil_20260315.jpg"
+    basil_photo.write_bytes(b"\xff\xd8fake")
+
+    sent_handles: list = []
+
+    mock_bot = MagicMock()
+
+    async def capture_photo(**kwargs):
+        sent_handles.append(kwargs.get("photo"))
+
+    mock_bot.send_photo = AsyncMock(side_effect=capture_photo)
+
+    with patch("flora.notifications.send_telegram", new=AsyncMock(return_value=True)), \
+         patch("telegram.Bot", return_value=mock_bot):
+        await send_daily_summary("tok", "123", SUMMARIES, photo_paths={"basil": basil_photo})
+
+    assert sent_handles, "send_photo was not called"
+    assert sent_handles[0].closed, "file handle was not closed after send_photo"
