@@ -1,5 +1,7 @@
 """End-to-end agent loop tests — real API (skipped if key not set) + fallback."""
+import logging
 import os
+from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from flora.config import load_config
 from flora.db import Database
@@ -66,3 +68,28 @@ async def test_fallback_runs_when_api_key_invalid(tmp_path, db):
     loop = AgentLoop(config, db)
     # Invalid key → fallback. Should not raise.
     await loop.run_once()
+
+
+async def test_iteration_cap_logs_warning(config, db, caplog):
+    """Agent loop logs a warning when the 10-iteration safety cap is hit."""
+    # Simulate Claude always returning a tool_use so the cap is reached
+    fake_tool_use = MagicMock()
+    fake_tool_use.type = "tool_use"
+    fake_tool_use.name = "water_plant"
+    fake_tool_use.id = "tu_fake"
+    fake_tool_use.input = {"plant_name": "basil-1", "duration_seconds": 5}
+
+    fake_response = MagicMock()
+    fake_response.stop_reason = "tool_use"
+    fake_response.content = [fake_tool_use]
+
+    with patch.object(
+        loop := AgentLoop(config, db),
+        "_client",
+    ):
+        loop._client.messages.create = AsyncMock(return_value=fake_response)
+        loop._executor.execute = AsyncMock(return_value="ok")
+        with caplog.at_level(logging.WARNING, logger="flora.agent.loop"):
+            await loop._run_claude_loop()
+
+    assert any("safety cap" in r.message for r in caplog.records)
