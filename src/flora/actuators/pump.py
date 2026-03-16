@@ -38,9 +38,11 @@ async def _activate_relay(gpio_pin: int, duration: int) -> bool:
 
         relay = OutputDevice(gpio_pin, active_high=False)
         relay.on()
-        await asyncio.sleep(duration)
-        relay.off()
-        relay.close()
+        try:
+            await asyncio.sleep(duration)
+        finally:
+            relay.off()
+            relay.close()
         return True
     except Exception as exc:
         logger.error("Pump relay GPIO %d failed: %s", gpio_pin, exc)
