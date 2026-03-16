@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Stre
 from fastapi.templating import Jinja2Templates
 
 from flora.analytics import estimate_hours_to_threshold
-from flora.config import AppConfig, append_plant_to_toml
+from flora.config import AppConfig, PlantConfig, append_plant_to_toml
 from flora.db import Database, SensorReading
 
 # GPIO pins commonly available on Pi for relay use (BCM numbering)
@@ -262,6 +262,14 @@ def create_router(
             "moisture_target_max": moisture_target_max,
         }
         append_plant_to_toml(Path("flora.toml"), plant)
+        config.plants.append(PlantConfig(
+            name=plant["name"],
+            species=plant["species"],
+            sensor_mac=plant["sensor_mac"],
+            pump_gpio=plant["pump_gpio"],
+            moisture_target_min=plant["moisture_target_min"],
+            moisture_target_max=plant["moisture_target_max"],
+        ))
         return RedirectResponse(url=f"/plants/{name.strip()}", status_code=303)
 
     @router.get("/logs", response_class=HTMLResponse)
