@@ -100,3 +100,16 @@ async def test_create_scheduler_no_plug_configured():
     job_ids = {job.id for job in scheduler.get_jobs()}
     assert "grow_light_on" not in job_ids
     assert "grow_light_off" not in job_ids
+
+
+@pytest.mark.asyncio
+async def test_action_log_composite_index_exists(tmp_path):
+    """idx_action_plant_type_ts must exist after connect() for efficient count_recent_same_action queries."""
+    db = Database(tmp_path / "test.db")
+    await db.connect()
+    async with db._conn_or_raise().execute(
+        "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_action_plant_type_ts'"
+    ) as cursor:
+        row = await cursor.fetchone()
+    await db.close()
+    assert row is not None, "idx_action_plant_type_ts index missing from action_log"
