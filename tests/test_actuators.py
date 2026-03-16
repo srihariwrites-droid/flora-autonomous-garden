@@ -1,10 +1,11 @@
 """Tests for actuator tool: set_light_schedule with APScheduler + SQLite persistence."""
 from __future__ import annotations
 
+import asyncio
 import pytest
 from datetime import time as dtime
 from pathlib import Path
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock, AsyncMock, patch
 
 from typing import TYPE_CHECKING
 
@@ -12,6 +13,27 @@ if TYPE_CHECKING:
     from flora.config import AppConfig
 
 from flora.db import Database, PlugSchedule
+
+
+# ─── Pump relay safety ────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_pump_relay_off_called_on_task_cancellation() -> None:
+    """Relay must be turned off even if the watering task is cancelled mid-sleep."""
+    from flora.actuators.pump import _activate_relay
+
+    mock_relay = MagicMock()
+
+    async def _short_sleep(duration: float) -> None:
+        raise asyncio.CancelledError
+
+    with patch("gpiozero.OutputDevice", return_value=mock_relay, create=True), \
+         patch("flora.actuators.pump.asyncio.sleep", side_effect=_short_sleep):
+        with pytest.raises(asyncio.CancelledError):
+            await _activate_relay(gpio_pin=17, duration=10)
+
+    mock_relay.off.assert_called_once()
+    mock_relay.close.assert_called_once()
 
 
 # ─── Database layer ───────────────────────────────────────────────────────────
