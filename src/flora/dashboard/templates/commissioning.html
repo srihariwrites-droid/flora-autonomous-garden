@@ -37,11 +37,13 @@
     <div style="margin-top: 1.25rem;">
         <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Sensor MAC address</label>
         <input type="text" id="sensor_mac" name="sensor_mac" form="saveForm" placeholder="AA:BB:CC:DD:EE:FF"
+               pattern="[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}"
                style="width: 100%; max-width: 260px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; padding: 0.5rem 0.75rem; outline: none;"
                oninput="this.value = this.value.toUpperCase()">
+        <div id="mac-error" style="display:none; font-size:0.7rem; color:var(--red); margin-top:0.3rem;">Must be in format AA:BB:CC:DD:EE:FF</div>
     </div>
     <div style="margin-top: 1.25rem; text-align: right;">
-        <button type="button" class="btn btn-primary" onclick="goToStep(2)">Next →</button>
+        <button type="button" class="btn btn-primary" onclick="goToStep2IfValidMac()">Next →</button>
     </div>
 </div>
 
@@ -210,6 +212,13 @@ function makeRow(label, value) {
     row.appendChild(lbl);
     row.appendChild(val);
     return row;
+}
+
+function goToStep2IfValidMac() {
+    var mac = document.getElementById('sensor_mac').value;
+    var valid = /^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$/.test(mac);
+    document.getElementById('mac-error').style.display = valid ? 'none' : 'block';
+    if (valid) goToStep(2);
 }
 
 function buildSummary() {
