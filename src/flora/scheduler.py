@@ -147,7 +147,7 @@ async def _send_daily_summary(config: AppConfig, db: Database) -> None:
             # Simple health status based on moisture
             if reading.moisture is None:
                 status = "unknown"
-            elif reading.moisture < 20:
+            elif reading.moisture < 10:
                 status = "critical"
             elif reading.moisture < plant.moisture_target_min:
                 status = "dry"

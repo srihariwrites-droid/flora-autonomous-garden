@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import pytest
-from unittest.mock import AsyncMock
+from datetime import datetime
+from unittest.mock import AsyncMock, patch
 
 from flora.config import AppConfig, PlantConfig, SmartPlugConfig
-from flora.db import Database, PlugSchedule
-from flora.scheduler import create_scheduler
+from flora.db import Database, PlugSchedule, SensorReading
+from flora.scheduler import create_scheduler, _send_daily_summary
 
 _CONFIG = AppConfig(
     db_path="test.db",
@@ -100,6 +101,75 @@ async def test_create_scheduler_no_plug_configured():
     job_ids = {job.id for job in scheduler.get_jobs()}
     assert "grow_light_on" not in job_ids
     assert "grow_light_off" not in job_ids
+
+
+_PLANT = PlantConfig(
+    name="basil-1",
+    species="basil",
+    sensor_mac="AA:BB:CC:DD:EE:FF",
+    pump_gpio=17,
+    moisture_target_min=40,
+    moisture_target_max=70,
+)
+
+_CONFIG_SUMMARY = AppConfig(
+    db_path="test.db",
+    dashboard_port=8000,
+    sensor_poll_interval=1800,
+    agent_loop_interval=7200,
+    anthropic_api_key="test-key",
+    anthropic_model="claude-haiku-4-5-20251001",
+    telegram_token="",
+    telegram_chat_id="",
+    plants=[_PLANT],
+    smart_plugs=[],
+)
+
+_TS = datetime(2026, 3, 16, 7, 0, 0)
+
+
+def _reading(moisture: float) -> SensorReading:
+    return SensorReading(
+        plant_name="basil-1",
+        timestamp=_TS,
+        moisture=moisture,
+        temperature=22.0,
+        light=300,
+        fertility=500,
+        battery=90,
+    )
+
+
+async def test_daily_summary_reports_critical_below_10():
+    """Moisture below 10% must report 'critical' in the daily summary."""
+    db = AsyncMock(spec=Database)
+    db.get_latest_sensor_reading.return_value = _reading(8.0)
+    captured: list[list[dict]] = []
+
+    async def fake_send(token, chat_id, summaries, **kwargs):
+        captured.append(summaries)
+
+    with patch("flora.scheduler.send_daily_summary", side_effect=fake_send):
+        await _send_daily_summary(_CONFIG_SUMMARY, db)
+
+    assert captured, "send_daily_summary was not called"
+    assert captured[0][0]["status"] == "critical"
+
+
+async def test_daily_summary_reports_dry_at_15_percent():
+    """Moisture at 15% (between 10% and target_min=40%) must report 'dry', not 'critical'."""
+    db = AsyncMock(spec=Database)
+    db.get_latest_sensor_reading.return_value = _reading(15.0)
+    captured: list[list[dict]] = []
+
+    async def fake_send(token, chat_id, summaries, **kwargs):
+        captured.append(summaries)
+
+    with patch("flora.scheduler.send_daily_summary", side_effect=fake_send):
+        await _send_daily_summary(_CONFIG_SUMMARY, db)
+
+    assert captured, "send_daily_summary was not called"
+    assert captured[0][0]["status"] == "dry"
 
 
 @pytest.mark.asyncio
