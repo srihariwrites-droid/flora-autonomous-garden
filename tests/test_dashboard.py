@@ -72,6 +72,20 @@ async def test_manual_water_unknown_plant(client):
     assert resp.status_code == 404
 
 
+async def test_manual_water_clamps_below_minimum(client):
+    """Duration below 5s is clamped to 5, matching agent and scheduler minimum."""
+    resp = await client.post("/plants/basil-1/water", data={"duration": "1"})
+    assert resp.status_code == 200
+    assert "5s" in resp.text
+
+
+async def test_manual_water_clamps_above_maximum(client):
+    """Duration above 30s is clamped to 30."""
+    resp = await client.post("/plants/basil-1/water", data={"duration": "120"})
+    assert resp.status_code == 200
+    assert "30s" in resp.text
+
+
 # --- Mock species data helpers ---
 
 def test_mock_moisture_known_species():

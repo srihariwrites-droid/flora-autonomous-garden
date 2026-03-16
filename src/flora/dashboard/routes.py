@@ -99,7 +99,7 @@ def create_router(
         plant = config.plant_by_name(name)
         if plant is None:
             return HTMLResponse("<p>Plant not found</p>", status_code=404)
-        duration = max(1, min(duration, 30))  # clamp 1-30s
+        duration = max(5, min(duration, 30))  # clamp 5-30s, matching agent and scheduler
         from flora.actuators.pump import water_plant as _pump
         from flora.db import ActionRecord
         success = await _pump(plant.pump_gpio, duration)
