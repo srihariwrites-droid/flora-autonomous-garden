@@ -59,6 +59,7 @@ CREATE INDEX IF NOT EXISTS idx_sensor_plant_ts   ON sensor_readings(plant_name, 
 CREATE INDEX IF NOT EXISTS idx_ambient_ts        ON ambient_readings(timestamp);
 CREATE INDEX IF NOT EXISTS idx_journal_plant_ts  ON plant_journals(plant_name, timestamp);
 CREATE INDEX IF NOT EXISTS idx_action_ts         ON action_log(timestamp);
+CREATE INDEX IF NOT EXISTS idx_action_plant_type_ts ON action_log(plant_name, action_type, timestamp);
 """
 
 
