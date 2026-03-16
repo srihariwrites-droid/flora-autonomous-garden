@@ -246,7 +246,7 @@ def validate_config(raw: dict) -> list[str]:
             errors.append(
                 f"{label}: auto_water_if_below ({threshold}) must be less than moisture_target_min ({mn})"
             )
-        elif threshold is not None and mx is not None and isinstance(mx, int) and threshold >= mx:
+        elif threshold is not None and mx is not None and threshold >= mx:
             errors.append(
                 f"{label}: auto_water_if_below ({threshold}) must be less than moisture_target_max ({mx})"
             )
