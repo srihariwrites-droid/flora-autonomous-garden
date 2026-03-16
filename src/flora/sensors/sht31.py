@@ -9,7 +9,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-IS_PI = platform.machine() == "aarch64"
+IS_PI = platform.machine() in ("aarch64", "armv7l")
 
 
 @dataclass

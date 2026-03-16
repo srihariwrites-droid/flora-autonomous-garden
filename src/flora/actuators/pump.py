@@ -8,7 +8,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-IS_PI = platform.machine() == "aarch64"
+IS_PI = platform.machine() in ("aarch64", "armv7l")
 
 # Max safe pump duration to prevent flooding
 MAX_DURATION_SECONDS = 30

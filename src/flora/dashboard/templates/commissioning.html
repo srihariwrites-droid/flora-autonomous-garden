@@ -121,7 +121,7 @@
         </div>
         <div style="display: flex; justify-content: space-between;">
             <button type="button" class="btn" onclick="goToStep(3)">← Back</button>
-            <form method="post" action="/plants/new" id="saveForm" style="display: inline;">
+            <form method="post" action="/plants/new" id="saveForm" style="display: inline;" onsubmit="buildSummary()">
                 <input type="hidden" name="name" id="f_name">
                 <input type="hidden" name="species" id="f_species">
                 <input type="hidden" name="sensor_mac" id="f_mac">
