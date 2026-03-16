@@ -96,6 +96,8 @@ def validate_config(raw: dict) -> list[str]:
     db_path = app.get("db_path")
     if db_path is not None and not db_path:
         errors.append("[app] db_path must not be empty")
+    elif db_path is not None and db_path and not db_path.strip():
+        errors.append("[app] db_path must not be whitespace-only")
     elif db_path is not None and any(ord(c) < 32 for c in db_path):
         errors.append("[app] db_path must not contain control characters")
 
